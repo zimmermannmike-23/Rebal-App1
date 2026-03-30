@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rebalancing">
+<meta name="theme-color" content="#0A1628">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="manifest" href="./manifest.json">
+<title>Hybrid Finanzplan · Rebalancing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A1628;--navy2:#0F2040;--blue-dk:#1F4E79;--blue-md:#2E75B6;--blue-lt:#4A90D9;--blue-pale:#DEEAF1;
+  --gold:#C9A84C;--gold-lt:#F0D98C;--silver:#8A9BB0;--white:#FFFFFF;
+  --green:#2E7D32;--green-lt:#C8E6C9;--orange:#E65100;--red:#C62828;--red-lt:#FFCDD2;
+  --glass:rgba(255,255,255,0.07);--glass-brd:rgba(255,255,255,0.12);
+  --r-sm:12px;--r-md:18px;--r-lg:24px;--r-xl:32px;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow:hidden}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--white);height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{display:flex;flex-direction:column;height:100dvh;height:100vh;overflow:hidden;position:relative}
+#app::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(30,78,121,.55) 0%,transparent 60%),radial-gradient(ellipse 60% 50% at 80% 80%,rgba(10,32,64,.8) 0%,transparent 60%),radial-gradient(ellipse 100% 100% at 50% 50%,var(--navy) 40%,var(--navy2) 100%);z-index:0;pointer-events:none}
+#topbar{position:relative;z-index:10;padding:calc(var(--safe-top) + 12px) 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--glass-brd);background:rgba(10,22,40,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.topbar-brand{display:flex;flex-direction:column}
+.brand-sub{font-size:10px;font-weight:500;color:var(--gold);letter-spacing:.12em;text-transform:uppercase}
+.brand-main{font-family:'DM Serif Display',serif;font-size:18px;color:var(--white);line-height:1.1}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--glass-brd);background:var(--glass);color:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:all .2s;backdrop-filter:blur(10px)}
+.icon-btn:active{transform:scale(.92);background:rgba(255,255,255,.15)}
+.icon-btn.loading{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.price-badge{font-size:10px;padding:4px 10px;border-radius:20px;background:var(--glass);border:1px solid var(--glass-brd);color:var(--silver)}
+.price-badge.fresh{color:var(--green-lt);border-color:rgba(46,125,50,.4)}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative;z-index:1;padding-bottom:calc(var(--safe-bot) + 90px)}
+#content::-webkit-scrollbar{display:none}
+#tabbar{position:fixed;bottom:0;left:0;right:0;z-index:20;padding:8px 8px calc(var(--safe-bot) + 8px);display:flex;gap:4px;background:rgba(10,22,40,.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--glass-brd)}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:var(--r-sm);border:none;background:transparent;color:var(--silver);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif}
+.tab-icon{font-size:20px;transition:transform .2s}
+.tab-label{font-size:9.5px;font-weight:500;letter-spacing:.03em}
+.tab-btn.active{color:var(--gold);background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.2)}
+.tab-btn.active .tab-icon{transform:translateY(-2px)}
+.tab-btn:active{transform:scale(.94)}
+.section{display:none;padding:16px;gap:14px;flex-direction:column;animation:fadeUp .35s ease both}
+.section.active{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--glass);border:1px solid var(--glass-brd);border-radius:var(--r-lg);padding:18px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent)}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--silver);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.hero-value{text-align:center;padding:8px 0 4px}
+.hv-label{font-size:11px;color:var(--silver);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.hv-number{font-family:'DM Serif Display',serif;font-size:44px;line-height:1;color:var(--white);letter-spacing:-.02em}
+.hv-cents{font-size:26px;opacity:.7}
+.hv-badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.hv-sub{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:4px 12px;border-radius:20px;font-weight:500}
+.hv-sub.positive{background:rgba(46,125,50,.2);color:var(--green-lt);border:1px solid rgba(46,125,50,.3)}
+.hv-sub.negative{background:rgba(230,81,0,.2);color:#FFCC80;border:1px solid rgba(230,81,0,.3)}
+.hv-sub.neutral{background:var(--glass);color:var(--silver);border:1px solid var(--glass-brd)}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi-tile{background:rgba(255,255,255,.05);border:1px solid var(--glass-brd);border-radius:var(--r-sm);padding:12px 8px;text-align:center}
+.kt-val{font-size:16px;font-weight:700;color:var(--white);margin-bottom:3px}
+.kt-lbl{font-size:9.5px;color:var(--silver);text-transform:uppercase;letter-spacing:.07em}
+.kpi-tile.gold .kt-val{color:var(--gold)}.kpi-tile.green .kt-val{color:var(--green-lt)}
+.prog-row{display:flex;flex-direction:column;gap:6px}
+.prog-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--silver)}
+.prog-labels .pl-left{font-weight:600;color:var(--white)}
+.prog-track{height:8px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.34,1.56,.64,1);background:linear-gradient(90deg,var(--blue-dk),var(--blue-md))}
+.prog-fill.gold{background:linear-gradient(90deg,var(--gold),var(--gold-lt))}
+.prog-fill.green{background:linear-gradient(90deg,var(--green),#66BB6A)}
+.ampel-banner{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:var(--r-md);border:1.5px solid;margin-bottom:2px;transition:all .4s}
+.ab-icon{font-size:28px;flex-shrink:0}.ab-text{flex:1}
+.ab-status{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.ab-desc{font-size:13px;color:rgba(255,255,255,.75);line-height:1.35}
+.ampel-banner.ok{background:rgba(46,125,50,.15);border-color:rgba(46,125,50,.4)}
+.ampel-banner.watch{background:rgba(249,168,37,.12);border-color:rgba(249,168,37,.35)}
+.ampel-banner.adjust{background:rgba(230,81,0,.15);border-color:rgba(230,81,0,.4)}
+.ampel-banner.urgent{background:rgba(198,40,40,.18);border-color:rgba(198,40,40,.5)}
+.ampel-banner.ok .ab-status{color:#81C784}.ampel-banner.watch .ab-status{color:var(--gold-lt)}
+.ampel-banner.adjust .ab-status{color:#FFCC80}.ampel-banner.urgent .ab-status{color:#EF9A9A}
+.etf-list{display:flex;flex-direction:column;gap:10px}
+.etf-row{display:flex;flex-direction:column;gap:7px;padding:14px;border-radius:var(--r-md);background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);cursor:pointer;transition:all .2s}
+.etf-row:active{transform:scale(.98)}.etf-row.expanded{background:rgba(255,255,255,.07)}.etf-row.disabled-etf{opacity:.4}
+.etf-row-top{display:flex;align-items:center;gap:12px}
+.etf-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.etf-info{flex:1}.etf-name{font-size:14px;font-weight:600;color:var(--white)}.etf-sub{font-size:10.5px;color:var(--silver);margin-top:1px}
+.etf-status{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.etf-weight{font-size:16px;font-weight:700;color:var(--white)}
+.etf-badge{font-size:10px;font-weight:700;padding:3px 9px;border-radius:99px;letter-spacing:.05em}
+.badge-ok{background:rgba(46,125,50,.25);color:#81C784;border:1px solid rgba(46,125,50,.4)}
+.badge-watch{background:rgba(249,168,37,.2);color:#FFD54F;border:1px solid rgba(249,168,37,.4)}
+.badge-adjust{background:rgba(230,81,0,.2);color:#FFCC80;border:1px solid rgba(230,81,0,.4)}
+.badge-urgent{background:rgba(198,40,40,.22);color:#EF9A9A;border:1px solid rgba(198,40,40,.4)}
+.badge-off{background:rgba(255,255,255,.06);color:var(--silver);border:1px solid var(--glass-brd)}
+.weight-track{height:5px;background:rgba(255,255,255,.08);border-radius:99px;position:relative;overflow:visible}
+.weight-target{position:absolute;top:-2px;width:3px;height:9px;background:rgba(255,255,255,.3);border-radius:2px;transform:translateX(-50%)}
+.weight-actual{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.34,1.56,.64,1)}
+.etf-detail{display:none;flex-direction:column;gap:10px;padding-top:10px;border-top:1px solid var(--glass-brd);animation:fadeUp .25s ease both}
+.etf-row.expanded .etf-detail{display:flex}
+.detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.detail-tile{background:rgba(255,255,255,.05);border-radius:var(--r-sm);padding:10px 8px;text-align:center}
+.dt-val{font-size:14px;font-weight:700;color:var(--white)}.dt-lbl{font-size:9px;color:var(--silver);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.recommendation{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:var(--r-sm);padding:10px 12px;font-size:12px;line-height:1.45;color:rgba(255,255,255,.85)}
+.toggle-wrap{display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0}
+.toggle-switch{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;border-radius:99px;background:rgba(255,255,255,.12);border:1px solid var(--glass-brd);transition:background .25s}
+.toggle-knob{position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--silver);transition:all .25s}
+.toggle-switch input:checked~.toggle-track{background:rgba(201,168,76,.4);border-color:rgba(201,168,76,.5)}
+.toggle-switch input:checked~.toggle-knob{background:var(--gold);left:19px}
+.toggle-lbl{font-size:10px;color:var(--silver);font-weight:600;white-space:nowrap}
+.sp-row{display:flex;flex-direction:column;gap:4px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.sp-row:last-child{border-bottom:none}
+.sp-row-main{display:flex;align-items:center;gap:10px}
+.sp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sp-name{flex:1;font-size:13px;color:var(--white)}
+.sp-amounts{display:flex;align-items:center;gap:8px}
+.sp-base{font-size:12px;color:var(--silver)}.sp-arr{font-size:11px;color:var(--silver)}
+.sp-adj{font-size:14px;font-weight:700}
+.sp-adj.same{color:var(--white)}.sp-adj.up{color:#81C784}.sp-adj.down{color:#FFCC80}.sp-adj.zero{color:#FFCDD2}
+.sp-dur{font-size:10px;color:var(--silver);margin-left:4px}
+.sp-row-needed{padding-left:18px}
+.needed-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px}
+.needed-plus{background:rgba(46,125,50,.2);color:#81C784;border:1px solid rgba(46,125,50,.35)}
+.needed-minus{background:rgba(249,168,37,.15);color:#FFD54F;border:1px solid rgba(249,168,37,.35)}
+.sp-net{font-size:12px;font-weight:700;padding:8px 12px;border-radius:var(--r-sm);margin-bottom:8px;text-align:center}
+.sp-net.balanced{background:rgba(46,125,50,.12);color:#81C784;border:1px solid rgba(46,125,50,.25)}
+.sp-net.plus{background:rgba(46,125,50,.12);color:#81C784;border:1px solid rgba(46,125,50,.25)}
+.sp-net.minus{background:rgba(249,168,37,.12);color:#FFD54F;border:1px solid rgba(249,168,37,.25)}
+.sp-total{display:flex;justify-content:space-between;align-items:center;padding-top:12px;margin-top:4px;border-top:1px solid var(--glass-brd)}
+.st-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--silver)}
+.st-val{font-size:20px;font-weight:700;color:var(--gold)}
+.input-group{display:flex;flex-direction:column;gap:8px;padding:14px;background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);border-radius:var(--r-md)}
+.input-group-header{display:flex;align-items:center;gap:10px}
+.ig-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ig-info{flex:1}.ig-name{font-size:14px;font-weight:600}.ig-meta{font-size:10.5px;color:var(--silver);margin-top:1px}
+.ig-val{font-size:13px;font-weight:700;color:var(--gold)}
+.input-row{display:flex;align-items:center;gap:10px}
+.input-label{font-size:11px;color:var(--silver);min-width:72px}
+.num-input{flex:1;background:rgba(255,255,255,.08);border:1px solid var(--glass-brd);border-radius:var(--r-sm);padding:10px 12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;text-align:right;outline:none;-webkit-appearance:none;transition:border-color .2s}
+.num-input:focus{border-color:var(--gold);background:rgba(201,168,76,.08)}
+.quick-btns{display:flex;gap:6px;flex-wrap:wrap}
+.qb{padding:5px 10px;border-radius:var(--r-sm);background:rgba(255,255,255,.07);border:1px solid var(--glass-brd);color:var(--silver);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.qb:active{transform:scale(.93)}.qb.sparplan{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:var(--gold-lt)}
+.disabled-entry{opacity:.4;pointer-events:none}
+.save-btn{width:100%;padding:15px;border-radius:var(--r-md);border:none;background:linear-gradient(135deg,var(--blue-dk),var(--blue-md));color:var(--white);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.03em;transition:all .2s;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:7px}
+.save-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,.1))}
+.save-btn:active{transform:scale(.98)}.save-btn.saved{background:linear-gradient(135deg,var(--green),#43A047)}
+.hist-item{display:flex;align-items:center;gap:14px;padding:12px 14px;background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);border-radius:var(--r-md)}
+.hist-month{width:44px;height:44px;border-radius:var(--r-sm);background:rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.hm-name{font-size:10px;font-weight:700;color:var(--silver)}.hm-year{font-size:8px;color:rgba(255,255,255,.35)}
+.hd-val{font-size:16px;font-weight:700;color:var(--white)}.hd-sub{font-size:10.5px;color:var(--silver);margin-top:2px}
+.hist-badge{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600}
+#mini-chart{width:100%;height:130px;display:block}
+.ms-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.ms-scroll::-webkit-scrollbar{display:none}
+.ms-tile{flex-shrink:0;width:90px;padding:12px 10px;border-radius:var(--r-md);border:1px solid var(--glass-brd);background:rgba(255,255,255,.04);display:flex;flex-direction:column;align-items:center;gap:4px}
+.ms-tile.current{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.35)}
+.ms-year{font-size:12px;font-weight:700;color:var(--silver)}.ms-tile.current .ms-year{color:var(--gold)}
+.ms-depot{font-size:13px;font-weight:700;color:var(--white)}.ms-div{font-size:10px;color:var(--silver)}
+.divmon-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.divmon-tile{border-radius:var(--r-sm);padding:9px 7px;background:rgba(255,255,255,.04);border:1px solid var(--glass-brd);text-align:center}
+.divmon-tile.current-month{background:rgba(201,168,76,.13);border-color:rgba(201,168,76,.4)}
+.divmon-tile.has-payment{border-color:rgba(46,117,182,.35)}
+.dmt-name{font-size:9px;font-weight:700;color:var(--silver);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.divmon-tile.current-month .dmt-name{color:var(--gold)}
+.dmt-val{font-size:13px;font-weight:700;color:var(--white);line-height:1.1}.dmt-val.zero{color:rgba(255,255,255,.2);font-size:11px}
+.divmon-tile.current-month .dmt-val{color:var(--gold-lt)}
+.dmt-etfs{display:flex;justify-content:center;gap:2px;margin-top:4px;flex-wrap:wrap}
+.dmt-dot{width:5px;height:5px;border-radius:50%}
+.divmon-totals{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.divmon-total-tile{background:rgba(255,255,255,.05);border-radius:var(--r-sm);padding:11px 12px;text-align:center;border:1px solid var(--glass-brd)}
+.dtt-label{font-size:9.5px;color:var(--silver);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.dtt-val{font-size:18px;font-weight:700;color:var(--gold)}.dtt-sub{font-size:10px;color:var(--silver);margin-top:2px}
+.divmon-etf-rows{display:flex;flex-direction:column;gap:5px;margin-top:10px}
+.divmon-etf-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:var(--r-sm);border:1px solid var(--glass-brd)}
+.divmon-etf-row.inactive{opacity:.35}
+.der-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.der-name{flex:1}.der-nm{font-size:12px;font-weight:500}.der-sub{font-size:10px;color:var(--silver)}
+.der-vals{text-align:right}.der-month{font-size:13px;font-weight:700;color:var(--gold-lt)}.der-year{font-size:10px;color:var(--silver);margin-top:1px}
+.settings-group{display:flex;flex-direction:column}
+.settings-row{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.05);gap:12px}
+.settings-row:last-child{border-bottom:none}
+.sr-icon{font-size:18px;width:32px;text-align:center;flex-shrink:0}
+.sr-info{flex:1}.sr-label{font-size:14px;font-weight:500}.sr-desc{font-size:11px;color:var(--silver);margin-top:2px}
+.sr-value{font-size:13px;font-weight:600;color:var(--gold)}
+.settings-input{background:rgba(255,255,255,.08);border:1px solid var(--glass-brd);border-radius:var(--r-sm);padding:8px 12px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;text-align:right;outline:none;width:90px}
+.settings-input:focus{border-color:var(--gold)}
+.etf-cfg-block{padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.etf-cfg-block:last-child{border-bottom:none}
+.etf-cfg-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.etf-cfg-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.etf-cfg-title{font-size:14px;font-weight:700}.etf-cfg-ticker{font-size:10px;color:var(--silver)}
+.auto-price-badge,.auto-div-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:5px 12px;border-radius:99px}
+.auto-price-badge{background:rgba(46,125,50,.15);color:#81C784;border:1px solid rgba(46,125,50,.3)}
+.auto-price-badge.loading{background:rgba(255,255,255,.06);color:var(--silver);border-color:var(--glass-brd)}
+.auto-div-badge{background:rgba(201,168,76,.12);color:var(--gold-lt);border:1px solid rgba(201,168,76,.25)}
+.auto-div-badge.loading{background:rgba(255,255,255,.06);color:var(--silver);border-color:var(--glass-brd)}
+.etf-cfg-auto-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.aab-label{font-size:9.5px;color:var(--silver);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.etf-cfg-inputs{display:flex;flex-direction:column;gap:7px}
+.etf-cfg-input-row{display:flex;align-items:center;gap:8px}
+.etf-cfg-label{font-size:11px;color:var(--silver);min-width:92px;flex-shrink:0}
+.etf-cfg-input{flex:1;background:rgba(255,255,255,.07);border:1px solid var(--glass-brd);border-radius:var(--r-sm);padding:8px 10px;color:var(--white);font-family:'DM Sans',monospace;font-size:13px;font-weight:600;text-align:right;outline:none;min-width:0}
+.etf-cfg-input:focus{border-color:var(--gold);background:rgba(201,168,76,.07)}
+.etf-cfg-input.manual-override{border-color:rgba(249,168,37,.5);background:rgba(249,168,37,.08)}
+.etf-cfg-unit{font-size:11px;color:var(--silver);white-space:nowrap;flex-shrink:0;min-width:48px}
+.etf-cfg-pnl{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.etf-cfg-pnl.up{background:rgba(46,125,50,.18);color:#81C784;border:1px solid rgba(46,125,50,.3)}
+.etf-cfg-pnl.down{background:rgba(198,40,40,.15);color:#EF9A9A;border:1px solid rgba(198,40,40,.3)}
+.etf-cfg-pnl.neu{background:rgba(255,255,255,.06);color:var(--silver);border:1px solid var(--glass-brd)}
+.weight-sum-bar{height:5px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:4px;overflow:hidden}
+.weight-sum-fill{height:100%;border-radius:99px;transition:width .4s}
+.weight-sum-label{display:flex;justify-content:space-between;font-size:10.5px;margin-top:4px}
+.etf-cfg-section-label{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--silver);margin:10px 0 5px;padding:0 2px;opacity:.7}
+.etf-cfg-divider{height:1px;background:linear-gradient(90deg,transparent,var(--glass-brd),transparent);margin:8px 0}
+.etf-cfg-computed{display:flex;margin-top:6px;border-radius:var(--r-sm);overflow:hidden;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.ecc-tile{flex:1;padding:8px 6px;text-align:center;border-right:1px solid rgba(255,255,255,.06)}.ecc-tile:last-child{border-right:none}
+.ecc-val{font-size:12px;font-weight:700;color:var(--white)}.ecc-lbl{font-size:9px;color:var(--silver);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+.ecc-val.positive{color:#81C784}.ecc-val.negative{color:#EF9A9A}.ecc-val.gold{color:var(--gold-lt)}
+.backup-info{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:var(--r-md);margin-bottom:14px}
+.backup-info .bi-icon{font-size:22px;flex-shrink:0}
+.bi-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--silver);margin-bottom:2px}
+.bi-value{font-size:13px;font-weight:600;color:var(--white)}
+.backup-info.ok{background:rgba(46,125,50,.15);border:1px solid rgba(46,125,50,.3)}
+.backup-info.warn{background:rgba(249,168,37,.12);border:1px solid rgba(249,168,37,.3)}
+.backup-info.never{background:rgba(198,40,40,.12);border:1px solid rgba(198,40,40,.3)}
+.backup-btn-row{display:flex;gap:10px;margin-bottom:12px}
+.backup-btn{flex:1;display:flex;align-items:center;gap:10px;padding:14px 12px;border-radius:var(--r-md);border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-align:left;transition:all .2s}
+.backup-btn:active{transform:scale(.96)}
+.backup-btn>span{font-size:22px;flex-shrink:0}.bb-title{font-size:13px;font-weight:700;margin-bottom:2px}.bb-sub{font-size:10px;opacity:.75}
+.backup-btn.primary{background:rgba(201,168,76,.18);border:1px solid rgba(201,168,76,.35);color:var(--gold-lt)}
+.backup-btn.secondary{background:rgba(46,117,182,.18);border:1px solid rgba(46,117,182,.35);color:var(--blue-pale)}
+.backup-note{font-size:11px;line-height:1.6;color:var(--silver);padding:10px 12px;background:rgba(255,255,255,.04);border-radius:var(--r-sm);border:1px solid var(--glass-brd);margin-bottom:4px}
+.backup-note strong{color:var(--white)}.backup-note em{color:var(--gold-lt);font-style:normal}
+.pdf-drop-zone{border:2px dashed rgba(201,168,76,.35);border-radius:var(--r-md);padding:24px 16px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(201,168,76,.04);position:relative}
+.pdf-drop-zone:hover{border-color:var(--gold);background:rgba(201,168,76,.09)}
+.pdz-icon{font-size:32px;margin-bottom:10px;display:block}.pdz-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px}.pdz-sub{font-size:11px;color:var(--silver)}
+.pdf-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.pdf-result{margin-top:12px;display:none;flex-direction:column;gap:8px}.pdf-result.show{display:flex}
+.pdf-position{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);background:rgba(255,255,255,.04);border:1px solid var(--glass-brd)}
+.pdf-position.matched{border-color:rgba(46,125,50,.4);background:rgba(46,125,50,.08)}
+.pp-check{font-size:16px;flex-shrink:0}.pp-name{font-size:12px;font-weight:600}.pp-isin{font-size:10px;color:var(--silver)}
+.pp-shares{font-size:13px;font-weight:700;color:var(--gold-lt)}.pp-eur{font-size:10px;color:var(--silver)}
+.pdf-apply-btn{width:100%;padding:13px;border-radius:var(--r-md);border:1px solid rgba(46,125,50,.5);background:rgba(46,125,50,.2);color:#81C784;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+.pdf-apply-btn:active{transform:scale(.97)}
+#confirm-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+#confirm-overlay.show{opacity:1;pointer-events:all}
+.confirm-sheet{width:100%;max-width:480px;background:rgba(15,32,64,.97);border-top:1px solid var(--glass-brd);border-radius:var(--r-xl) var(--r-xl) 0 0;padding:20px 20px calc(env(safe-area-inset-bottom)+20px);transform:translateY(40px);transition:transform .3s cubic-bezier(.34,1.2,.64,1)}
+#confirm-overlay.show .confirm-sheet{transform:translateY(0)}
+.cs-handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 18px}
+.cs-title{font-size:17px;font-weight:700;text-align:center;margin-bottom:8px}
+.cs-desc{font-size:13px;color:var(--silver);text-align:center;line-height:1.5;margin-bottom:20px}
+.cs-actions{display:flex;gap:10px}
+.cs-btn{flex:1;padding:14px;border-radius:var(--r-md);border:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.cs-btn:active{transform:scale(.96)}.cs-cancel{background:rgba(255,255,255,.08);color:var(--white)}.cs-confirm{background:rgba(198,40,40,.85);color:var(--white)}
+#toast{position:fixed;top:calc(var(--safe-top) + 70px);left:50%;transform:translateX(-50%) translateY(-20px);z-index:100;background:rgba(30,50,80,.95);border:1px solid var(--glass-brd);border-radius:var(--r-md);padding:10px 18px;font-size:13px;font-weight:600;color:var(--white);backdrop-filter:blur(20px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--silver);padding:0 2px}
+.empty-state{text-align:center;padding:32px 20px;color:var(--silver)}
+.es-icon{font-size:36px;margin-bottom:12px;opacity:.5}.es-text{font-size:14px;line-height:1.5}
+.preset-apply-btn{width:100%;margin-top:10px;padding:11px;border-radius:var(--r-md);border:1px solid rgba(46,117,182,.4);background:rgba(46,117,182,.15);color:var(--blue-pale);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+.preset-apply-btn:active{transform:scale(.97);background:rgba(46,117,182,.25)}
+</style></head><body>
+<div id="app">
+<div id="topbar">
+  <div class="topbar-brand"><span class="brand-sub">Hybrid Finanzplan</span><span class="brand-main">Rebalancing</span></div>
+  <div class="topbar-actions">
+    <span class="price-badge" id="last-update-badge">—</span>
+    <button class="icon-btn" id="refresh-btn" onclick="refreshPrices()">↻</button>
+  </div>
+</div>
+<div id="content">
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="section active">
+  <div class="card">
+    <div class="hero-value">
+      <div class="hv-label">Gesamtdepotwert</div>
+      <div class="hv-number" id="total-value">— <span class="hv-cents">—</span></div>
+      <div class="hv-badges">
+        <div class="hv-sub neutral" id="vs-plan-badge">Lade…</div>
+        <div class="hv-sub neutral" id="pnl-badge" style="display:none"></div>
+      </div>
+      <div id="pnl-detail-row" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)"></div>
+    </div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi-tile gold"><div class="kt-val" id="kpi-sparrate">150 €</div><div class="kt-lbl">Sparrate</div></div>
+    <div class="kpi-tile"><div class="kt-val" id="kpi-year">2027</div><div class="kt-lbl">Aktuell</div></div>
+    <div class="kpi-tile green"><div class="kt-val">1.000 €</div><div class="kt-lbl">Ziel/Mon.</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">◎ Zielfortschritt</div>
+    <div class="prog-row">
+      <div class="prog-labels"><span class="pl-left">Depotwert</span><span id="prog-pct">—%</span></div>
+      <div class="prog-track"><div class="prog-fill gold" id="prog-bar" style="width:0%"></div></div>
+      <div class="prog-labels" style="margin-top:2px"><span>2027: 50k €</span><span>Ziel 2042: 305k €</span></div>
+    </div>
+  </div>
+  <div class="card"><div class="card-title">◈ Meilensteine</div><div class="ms-scroll" id="ms-scroll"></div></div>
+  <div class="card">
+    <div class="card-title" style="justify-content:space-between;margin-bottom:14px">
+      <span>₿ Erwartete Dividenden</span>
+      <button class="icon-btn" style="width:28px;height:28px;font-size:13px" onclick="refreshDividends()" id="div-refresh-btn">↻</button>
+    </div>
+    <div class="divmon-grid" id="divmon-grid"></div>
+    <div class="divmon-totals" id="divmon-totals"></div>
+    <div class="divmon-etf-rows" id="divmon-etf-rows"></div>
+    <div id="div-loading" style="display:none;text-align:center;padding:12px;font-size:11px;color:var(--silver)">⟳ Lade Dividendendaten…</div>
+    <div style="font-size:10px;color:var(--silver);margin-top:8px;line-height:1.5;opacity:.65">Ausschüttung = Stückzahl × Jahresausschüttung/Anteil ÷ Zahlungsfrequenz. Nur in echten Ausschüttungsmonaten.</div>
+  </div>
+  <div class="card"><div class="card-title">⌇ Verlauf</div><canvas id="mini-chart"></canvas></div>
+</div>
+
+<!-- REBALANCING -->
+<div id="tab-rebalancing" class="section">
+  <div class="ampel-banner" id="ampel-banner">
+    <div class="ab-icon" id="ampel-icon">⏳</div>
+    <div class="ab-text"><div class="ab-status" id="ampel-status">Lade…</div><div class="ab-desc" id="ampel-desc">Kurse werden abgerufen</div></div>
+  </div>
+  <div class="card"><div class="card-title">◎ ETF-Positionen</div><div class="etf-list" id="etf-list"></div></div>
+  <div class="card">
+    <div class="card-title">₿ Sparplan-Empfehlung</div>
+    <div id="sparplan-list"></div>
+    <div id="sp-net-rebalancing" class="sp-net balanced"></div>
+    <div class="sp-total"><span class="st-label">Sparplan / Mon.</span><span class="st-val" id="sp-total-val">—</span></div>
+  </div>
+</div>
+
+<!-- EINGABE -->
+<div id="tab-entry" class="section">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:20px" id="current-month-label">—</div>
+        <div style="font-size:11px;color:var(--silver);margin-top:2px">Stückzahlen aktualisieren</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--silver)">Max. Abweichung</div>
+        <div style="font-size:18px;font-weight:700" id="max-dev-label">—</div>
+      </div>
+    </div>
+    <button class="save-btn" id="save-btn" onclick="saveEntry()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+      Speichern &amp; Berechnen
+    </button>
+  </div>
+  <div id="entry-inputs"></div>
+  <div class="card">
+    <div class="card-title">⟁ Kaufrechner</div>
+    <div class="input-row" style="margin-bottom:12px">
+      <span class="input-label">Betrag (€)</span>
+      <input type="text" inputmode="decimal" class="num-input" id="calc-amount" value="150" oninput="updateCalculator()" onfocus="selectAllInput(this)" autocomplete="off" autocorrect="off">
+    </div>
+    <div id="calc-result" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- VERLAUF -->
+<div id="tab-history" class="section">
+  <div class="card">
+    <div class="card-title">⌇ Plan vs. Ist — <span id="current-year-label">2027</span></div>
+    <div class="kpi-row" style="margin-bottom:8px">
+      <div class="kpi-tile"><div class="kt-val" id="hist-ist">—</div><div class="kt-lbl">Ist-Depot</div></div>
+      <div class="kpi-tile gold"><div class="kt-val" id="hist-plan">—</div><div class="kt-lbl">Plan-Depot</div></div>
+      <div class="kpi-tile" id="hist-diff-tile"><div class="kt-val" id="hist-diff">—</div><div class="kt-lbl">Abweichung</div></div>
+    </div>
+    <div class="prog-row">
+      <div class="prog-labels"><span class="pl-left" id="hist-prog-label">Fortschritt</span><span id="hist-prog-pct">—%</span></div>
+      <div class="prog-track"><div class="prog-fill" id="hist-prog-bar" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="section-label">Monatsprotokoll</div>
+  <div id="history-list"><div class="empty-state"><div class="es-icon">🗓</div><div class="es-text">Noch keine Einträge.<br>Beginne mit der Monatseingabe.</div></div></div>
+</div>
+
+<!-- EINSTELLUNGEN -->
+<div id="tab-settings" class="section">
+  <div class="card">
+    <div class="card-title">◎ Depot-Parameter</div>
+    <div class="settings-group">
+      <div class="settings-row"><span class="sr-icon">₿</span><div class="sr-info"><div class="sr-label">Sparrate/Monat</div><div class="sr-desc">Auf aktive ETFs aufgeteilt</div></div><input type="text" inputmode="decimal" class="settings-input" id="set-sparrate" value="150" onchange="saveSettings()" onfocus="selectAllInput(this)" autocomplete="off"></div>
+      <div class="settings-row"><span class="sr-icon">💼</span><div class="sr-info"><div class="sr-label">Startkapital</div><div class="sr-desc">Einmalinvestition Jan 2027</div></div><input type="text" inputmode="decimal" class="settings-input" id="set-startkapital" value="50000" onchange="saveSettings()" onfocus="selectAllInput(this)" autocomplete="off"></div>
+      <div class="settings-row"><span class="sr-icon">🎯</span><div class="sr-info"><div class="sr-label">Zieldividende</div><div class="sr-desc">Netto / Monat bis 2042</div></div><span class="sr-value">1.000 €</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="justify-content:space-between">
+      <span>⌇ ETF-Konfiguration</span>
+      <button class="icon-btn" style="width:28px;height:28px;font-size:12px" id="cfg-refresh-btn" onclick="refreshAllETFData()">↻</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--silver);line-height:1.6;margin-bottom:14px;padding:9px 12px;background:rgba(255,255,255,.04);border-radius:var(--r-sm)">
+      <strong style="color:var(--gold-lt)">Ein/Aus:</strong> Deaktivierte ETFs werden aus Gewichtung, Sparplan und Ampel entfernt. ·
+      <strong style="color:var(--white)">Ausschüttung</strong> = €/Anteil/Jahr (absolut, kein Prozentsatz).
+    </div>
+    <div id="etf-cfg-list"></div>
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--glass-brd)">
+      <div class="weight-sum-bar"><div class="weight-sum-fill" id="weight-sum-fill"></div></div>
+      <div class="weight-sum-label"><span style="color:var(--silver)">Summe aktive Zielgewichte</span><span id="weight-sum-label" style="font-weight:700">—</span></div>
+    </div>
+    <button class="preset-apply-btn" onclick="applyDefaultShares()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Stückzahlen in Eingabe übernehmen</button>
+  </div>
+  <div class="card">
+    <div class="card-title">◉ Ampel-Schwellen</div>
+    <div class="settings-group">
+      <div class="settings-row"><span class="sr-icon">🟢</span><div class="sr-info"><div class="sr-label">Grün — OK</div></div><span class="sr-value" style="color:#81C784">&lt; 3 %</span></div>
+      <div class="settings-row"><span class="sr-icon">🟡</span><div class="sr-info"><div class="sr-label">Gelb — Prüfen</div></div><span class="sr-value" style="color:#FFD54F">3 – 5 %</span></div>
+      <div class="settings-row"><span class="sr-icon">🟠</span><div class="sr-info"><div class="sr-label">Orange — Anpassen</div></div><span class="sr-value" style="color:#FFCC80">5 – 10 %</span></div>
+      <div class="settings-row"><span class="sr-icon">🔴</span><div class="sr-info"><div class="sr-label">Rot — Sofort!</div></div><span class="sr-value" style="color:#EF9A9A">&gt; 10 %</span></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">⬆ Depotauszug importieren (PDF)</div>
+    <div style="font-size:11px;color:var(--silver);line-height:1.6;margin-bottom:12px">Trade Republic Depotauszug hochladen — ETFs werden automatisch erkannt.</div>
+    <div class="pdf-drop-zone" id="pdf-drop-zone">
+      <input type="file" accept=".pdf,application/pdf" id="pdf-file-input" onchange="handlePDFUpload(event)">
+      <span class="pdz-icon">📄</span>
+      <div class="pdz-title">PDF hier ablegen oder antippen</div>
+      <div class="pdz-sub">Trade Republic Depotauszug</div>
+    </div>
+    <div class="pdf-result" id="pdf-result">
+      <div id="pdf-positions"></div>
+      <div id="pdf-unmatched-info" style="font-size:10px;color:var(--silver);padding:4px 2px;display:none"></div>
+      <button class="pdf-apply-btn" id="pdf-apply-btn" onclick="applyPDFData()" style="display:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>Depot-Daten übernehmen</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">◈ Daten sichern &amp; wiederherstellen</div>
+    <div class="backup-info never" id="backup-status-row">
+      <div class="bi-icon">🔴</div>
+      <div><div class="bi-label">Letztes Backup</div><div class="bi-value" id="last-backup-label">Noch kein Backup erstellt</div></div>
+    </div>
+    <div class="backup-btn-row">
+      <button class="backup-btn primary" onclick="exportData()"><span>⬆️</span><div><div class="bb-title">Exportieren</div><div class="bb-sub">Als .json speichern</div></div></button>
+      <button class="backup-btn secondary" onclick="triggerImport()"><span>⬇️</span><div><div class="bb-title">Importieren</div><div class="bb-sub">Backup laden</div></div></button>
+    </div>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importData(event)">
+    <div class="backup-note">📥 <strong>Backup landet im Downloads-Ordner.</strong> Öffnen: <em>Dateien-App → Downloads</em>.</div>
+    <div class="settings-group" style="margin-top:8px">
+      <div class="settings-row" style="cursor:pointer" onclick="confirmClear()">
+        <span class="sr-icon">🗑</span>
+        <div class="sr-info"><div class="sr-label" style="color:#EF9A9A">Alle Daten löschen</div><div class="sr-desc">Stückzahlen, Verlauf &amp; Einstellungen</div></div>
+        <span style="color:#EF9A9A;font-size:20px">›</span>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">ℹ Info</div>
+    <div class="settings-group">
+      <div class="settings-row"><span class="sr-icon">💳</span><div class="sr-info"><div class="sr-label">Depot-Nr.</div></div><span class="sr-value">0139061601</span></div>
+      <div class="settings-row"><span class="sr-icon">📱</span><div class="sr-info"><div class="sr-label">Version</div></div><span class="sr-value">2.2 · PWA</span></div>
+      <div class="settings-row"><span class="sr-icon">📅</span><div class="sr-info"><div class="sr-label">Zeithorizont</div></div><span class="sr-value">2027 – 2042</span></div>
+      <div class="settings-row"><span class="sr-icon">🗂</span><div class="sr-info"><div class="sr-label">Datenmenge</div></div><span class="sr-value" id="data-size-label">—</span></div>
+    </div>
+  </div>
+  <div style="padding:8px 2px;font-size:10.5px;color:var(--silver);line-height:1.55">Keine Anlageberatung. Kursdaten via Yahoo Finance.</div>
+</div>
+
+</div><!-- /content -->
+
+<!-- TABBAR -->
+<div id="tabbar">
+  <button class="tab-btn active" onclick="switchTab('dashboard',this)"><span class="tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span><span class="tab-label">Depot</span></button>
+  <button class="tab-btn" onclick="switchTab('rebalancing',this)"><span class="tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span><span class="tab-label">Ampel</span></button>
+  <button class="tab-btn" onclick="switchTab('entry',this)"><span class="tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span><span class="tab-label">Eingabe</span></button>
+  <button class="tab-btn" onclick="switchTab('history',this)"><span class="tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><span class="tab-label">Verlauf</span></button>
+  <button class="tab-btn" onclick="switchTab('settings',this)"><span class="tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="tab-label">Einstellungen</span></button>
+</div>
+</div><!-- /app -->
+
+<div id="confirm-overlay">
+  <div class="confirm-sheet">
+    <div class="cs-handle"></div>
+    <div class="cs-title">Alle Daten löschen?</div>
+    <div class="cs-desc">Diese Aktion kann nicht rückgängig gemacht werden. Erstelle vorher ein Backup!</div>
+    <div class="cs-actions"><button class="cs-btn cs-cancel" onclick="hideConfirm()">Abbrechen</button><button class="cs-btn cs-confirm" id="cs-confirm-btn">Löschen</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+<script>
+// ══════════════════════════════════════════════════════
+//  PORTFOLIO v2.2
+//  TDIV  zahlt quartalsweise: Mär, Jun, Sep, Dez
+//  VHYL  zahlt quartalsweise: Apr, Jul, Okt, Dez
+//  USDV  zahlt quartalsweise: Mär, Jun, Sep, Dez
+//  IEAC  zahlt halbjährlich:  Jan, Jul
+//  Dividende gespeichert als €/Anteil/Jahr (absolut)
+// ══════════════════════════════════════════════════════
+const ETFS = [
+  { id:'tdiv', name:'VanEck Div. Leaders',      isin:'NL0011683594', ticker:'TDIV.AS', tickerAlt:'TDIV.L',
+    weight:0.35, color:'#1F4E79', divMonths:[3,6,9,12],  note:'Dividend Leaders · quartalsweise (Mär/Jun/Sep/Dez)' },
+  { id:'vhyl', name:'Vanguard FTSE HiDiv Yld',  isin:'IE00B8GKDB10', ticker:'VHYL.AS', tickerAlt:'VHYL.L',
+    weight:0.25, color:'#2E75B6', divMonths:[4,7,10,12], note:'High Dividend Yield · quartalsweise (Apr/Jul/Okt/Dez)' },
+  { id:'usdv', name:'SPDR US Div. Aristocrats',  isin:'IE00B6YX5D40', ticker:'USDV.AS', tickerAlt:'USDV.L',
+    weight:0.25, color:'#4A90D9', divMonths:[3,6,9,12],  note:'US Dividend Aristocrats · quartalsweise (Mär/Jun/Sep/Dez)' },
+  { id:'ieac', name:'iShares Core EUR Corp Bd',  isin:'IE00B3F81R35', ticker:'IEAC.AS', tickerAlt:'IEAC.L',
+    weight:0.15, color:'#C9A84C', divMonths:[1,7],       note:'EUR Corp. Bond · halbjährlich (Jan/Jul)' },
+];
+
+// Fallback €/Anteil/Jahr (Schätzwerte 2025/26)
+// TDIV ~51.50 EUR × 3.38%  = 1.74 €/St./J.
+// VHYL ~83.80 EUR × 2.69%  ≈ 2.07 €/St./J.  (USD-Ausschüttung umgerechnet)
+// USDV ~60.35 USD × 2.10%  ≈ 1.17 €/St./J.  (USD-Ausschüttung umgerechnet)
+// IEAC ~119.00 EUR × 3.35% = 3.99 €/St./J.
+const DIV_EUR_FALLBACK = { tdiv:1.74, vhyl:2.07, usdv:1.17, ieac:3.99 };
+
+const PLAN = [
+  {year:2027,depot:50000,netDiv:130},{year:2028,depot:58250,netDiv:152},{year:2029,depot:67063,netDiv:175},
+  {year:2030,depot:76466,netDiv:200},{year:2031,depot:86489,netDiv:227},{year:2032,depot:97163,netDiv:256},
+  {year:2033,depot:108521,netDiv:289},{year:2034,depot:120597,netDiv:325},{year:2035,depot:133427,netDiv:364},
+  {year:2036,depot:147048,netDiv:408},{year:2037,depot:161500,netDiv:456},{year:2038,depot:176825,netDiv:509},
+  {year:2039,depot:193066,netDiv:567},{year:2040,depot:210270,netDiv:631},{year:2041,depot:228483,netDiv:701},
+  {year:2042,depot:305000,netDiv:1000},
+];
+
+const PDF_ISIN_MAP = { 'NL0011683594':'tdiv','IE00B8GKDB10':'vhyl','IE00B6YX5D40':'usdv','IE00B3F81R35':'ieac' };
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let S = {
+  prices:{},changes:{},shares:{},sparrate:150,startkapital:50000,
+  purchasePrices:{},manualDivEur:{},customWeights:{},defaultShares:{},
+  divData:{},manualPrices:{},etfEnabled:{},lastFetch:null,snapshots:[],expanded:{},
+};
+const KEY='hfp3v2_state', BACKUP_KEY='hfp3v2_last_backup';
+
+function activeETFs(){ return ETFS.filter(e=>S.etfEnabled[e.id]!==false); }
+function isActive(e){ return S.etfEnabled[e.id]!==false; }
+
+function save(){
+  try{ const r=JSON.stringify(S); localStorage.setItem(KEY,r); const el=document.getElementById('data-size-label'); if(el)el.textContent=(new Blob([r]).size/1024).toFixed(1)+' KB'; }
+  catch(e){ showToast('⚠️ Speichern fehlgeschlagen'); }
+}
+function load(){
+  try{ const r=localStorage.getItem(KEY); if(r){ S=Object.assign(S,JSON.parse(r)); } }
+  catch(e){ console.warn('load failed',e); }
+  if(!S.etfEnabled) S.etfEnabled={};
+  if(!S.manualDivEur) S.manualDivEur={};
+  if(!S.manualPrices) S.manualPrices={};
+}
+
+// ── EXPORT/IMPORT ────────────────────────────────────────────────────────────
+async function exportData(){
+  const backup={version:'2.2',exported:new Date().toISOString(),label:'Hybrid Finanzplan · Depot 0139061601',state:S};
+  const json=JSON.stringify(backup,null,2), blob=new Blob([json],{type:'application/json'});
+  const date=new Date().toISOString().slice(0,10), fn=`HybridFinanzplan_Backup_${date}.json`;
+  if(window.showSaveFilePicker){
+    try{ const h=await window.showSaveFilePicker({suggestedName:fn,types:[{description:'JSON',accept:{'application/json':['.json']}}],startIn:'downloads'}); const w=await h.createWritable(); await w.write(blob); await w.close(); _finishExport(fn); return; }
+    catch(e){ if(e.name==='AbortError')return; }
+  }
+  const url=URL.createObjectURL(blob), a=Object.assign(document.createElement('a'),{href:url,download:fn,style:'display:none'});
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },500);
+  _finishExport(fn);
+}
+function _finishExport(fn){ localStorage.setItem(BACKUP_KEY,new Date().toISOString()); updateBackupStatus(); showToast('✅ '+fn); }
+function triggerImport(){ document.getElementById('import-input').click(); }
+function importData(e){
+  const file=e.target.files[0]; if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{ try{ const b=JSON.parse(ev.target.result); if(!b.state)throw new Error('Ungültiges Format'); S=Object.assign({},S,b.state); if(!S.etfEnabled)S.etfEnabled={}; if(!S.manualDivEur)S.manualDivEur={}; if(!S.manualPrices)S.manualPrices={}; save(); renderAll(); if(b.exported){localStorage.setItem(BACKUP_KEY,b.exported);updateBackupStatus();} showToast('✅ Backup geladen'); }catch(err){showToast('❌ '+err.message);} e.target.value=''; };
+  r.readAsText(file);
+}
+function updateBackupStatus(){
+  const ts=localStorage.getItem(BACKUP_KEY), row=document.getElementById('backup-status-row'), lbl=document.getElementById('last-backup-label');
+  if(!row||!lbl)return;
+  if(!ts){row.className='backup-info never';row.querySelector('.bi-icon').textContent='🔴';lbl.textContent='Noch kein Backup erstellt';return;}
+  const d=new Date(ts), days=Math.floor((Date.now()-d.getTime())/86400000);
+  lbl.textContent=d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})+' ('+(days===0?'heute':days===1?'gestern':'vor '+days+' Tagen')+')';
+  row.className='backup-info '+(days<=35?'ok':'warn'); row.querySelector('.bi-icon').textContent=days<=35?'🟢':'🟡';
+}
+function confirmClear(){ document.getElementById('confirm-overlay').classList.add('show'); document.getElementById('cs-confirm-btn').onclick=()=>{clearAllData();hideConfirm();}; }
+function hideConfirm(){ document.getElementById('confirm-overlay').classList.remove('show'); }
+function clearAllData(){
+  localStorage.removeItem(KEY);localStorage.removeItem(BACKUP_KEY);
+  S={prices:{},changes:{},shares:{},sparrate:150,startkapital:50000,purchasePrices:{},manualDivEur:{},customWeights:{},defaultShares:{},divData:{},manualPrices:{},etfEnabled:{},lastFetch:null,snapshots:[],expanded:{}};
+  renderAll();updateBackupStatus();showToast('🗑 Alle Daten gelöscht');
+}
+
+// ── PREISE ───────────────────────────────────────────────────────────────────
+async function fetchYahoo(ticker){
+  const yurl=`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=2d`;
+  for(const proxy of['https://api.allorigins.win/get?url=','https://corsproxy.io/?']){
+    try{
+      const res=await fetch(proxy+encodeURIComponent(yurl),{signal:AbortSignal.timeout(7000)});
+      if(!res.ok)continue;
+      const json=await res.json(), raw=json.contents??json, data=typeof raw==='string'?JSON.parse(raw):raw;
+      const meta=data?.chart?.result?.[0]?.meta;
+      if(meta?.regularMarketPrice>0){ const p=meta.regularMarketPrice, prev=meta.chartPreviousClose||p; return{price:p,change:prev>0?(p-prev)/prev:0,source:ticker}; }
+    }catch(e){}
+  }
+  return null;
+}
+async function fetchPrice(etf){
+  const manual=S.manualPrices?.[etf.id];
+  if(manual?.price>0&&manual?.ts&&(Date.now()-manual.ts)<3600000) return{price:manual.price,change:0,source:'manuell'};
+  let r=await fetchYahoo(etf.ticker); if(r?.price>0)return r;
+  if(etf.tickerAlt){r=await fetchYahoo(etf.tickerAlt);if(r?.price>0)return r;}
+  const last=S.prices[etf.id]; if(last>0&&S.lastFetch&&(Date.now()-S.lastFetch)<86400000) return{price:last,change:S.changes[etf.id]||0,source:'cache'};
+  const fb={tdiv:51.50,vhyl:83.80,usdv:60.35,ieac:119.00}; return{price:fb[etf.id]??50,change:0,source:'fallback'};
+}
+async function refreshPrices(){
+  const btn=document.getElementById('refresh-btn'), badge=document.getElementById('last-update-badge');
+  btn.classList.add('loading');badge.textContent='Lade…';badge.className='price-badge';
+  const results=await Promise.all(ETFS.map(e=>fetchPrice(e)));
+  results.forEach((r,i)=>{S.prices[ETFS[i].id]=r.price;S.changes[ETFS[i].id]=r.change;});
+  S.lastFetch=Date.now();save();
+  const now=new Date(); badge.textContent=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  badge.className='price-badge fresh';btn.classList.remove('loading');
+  showToast(ETFS.every(e=>S.prices[e.id]>0)?'Kurse aktualisiert ✓':'⚠️ Einige Kurse fehlen');
+  renderAll();
+}
+
+// ── DIVIDENDEN ───────────────────────────────────────────────────────────────
+function getDivEurPerYear(etf){
+  if(S.manualDivEur[etf.id]>0) return S.manualDivEur[etf.id];
+  const cd=S.divData[etf.id]; if(cd?.yield>0&&S.prices[etf.id]>0) return S.prices[etf.id]*cd.yield;
+  return DIV_EUR_FALLBACK[etf.id]||0;
+}
+function divPaymentPerShare(etf){ const y=getDivEurPerYear(etf), n=etf.divMonths.length; return n>0?y/n:0; }
+function avgMonthlyDivPerShare(etf){ return getDivEurPerYear(etf)/12; }
+function divSource(etf){ if(S.manualDivEur[etf.id]>0)return'manuell'; if(S.divData[etf.id]?.yield>0)return S.divData[etf.id].source||'justETF'; return'Schätzung'; }
+
+function parseJustETFYield(html){
+  for(const re of[/Ausschüttungsrendite[^%]*?([\d,\.]+)\s*%/i,/"distributionYield"\s*:\s*([\d.]+)/i,/distribution[^%]*?([\d,\.]+)\s*%/i]){
+    const m=html.match(re); if(m){const v=parseFloat(m[1].replace(',','.')); if(!isNaN(v)&&v>0&&v<30)return v>1?v/100:v;}
+  }
+  return null;
+}
+async function fetchJustETFYield(etf){
+  const cached=S.divData[etf.id]; if(cached?.yield>0&&cached?.lastFetch&&(Date.now()-cached.lastFetch)<86400000) return{yield:cached.yield,source:cached.source||'justETF'};
+  if(S.manualDivEur[etf.id]>0) return{yield:0,source:'manuell'};
+  const targetUrl=`https://www.justetf.com/de/etf-profile.html?isin=${etf.isin}`;
+  for(const{url:proxy,key}of[{url:'https://api.allorigins.win/get?url=',key:'contents'},{url:'https://corsproxy.io/?',key:null}]){
+    try{
+      const res=await fetch(proxy+encodeURIComponent(targetUrl),{signal:AbortSignal.timeout(8000)}); if(!res.ok)continue;
+      let html; if(key){const j=await res.json();html=j[key];if(typeof html!=='string')continue;}else html=await res.text();
+      const yld=parseJustETFYield(html); if(yld>0){S.divData[etf.id]={yield:yld,lastFetch:Date.now(),source:'justETF'};save();return{yield:yld,source:'justETF'};}
+    }catch(e){}
+  }
+  return{yield:0,source:'Schätzung'};
+}
+async function refreshDividends(){
+  const btn=document.getElementById('div-refresh-btn'), lod=document.getElementById('div-loading');
+  if(btn){btn.textContent='…';btn.disabled=true;} if(lod)lod.style.display='block';
+  const results=await Promise.all(ETFS.map(e=>fetchJustETFYield(e)));
+  results.forEach((r,i)=>{ if(!S.manualDivEur[ETFS[i].id]&&r.yield>0) S.divData[ETFS[i].id]={...(S.divData[ETFS[i].id]||{}),yield:r.yield,lastFetch:Date.now(),source:r.source}; });
+  save(); if(lod)lod.style.display='none'; if(btn){btn.textContent='↻';btn.disabled=false;}
+  renderDividendSection(); renderETFConfig();
+}
+async function refreshAllETFData(){
+  const btn=document.getElementById('cfg-refresh-btn'); if(btn){btn.textContent='…';btn.disabled=true;}
+  await refreshPrices(); await refreshDividends(); renderETFConfig();
+  if(btn){btn.textContent='↻';btn.disabled=false;} showToast('Kurse & Dividenden aktualisiert ✓');
+}
+
+// ── BERECHNUNGEN ─────────────────────────────────────────────────────────────
+function getWeight(etf){ if(!isActive(etf))return 0; const cw=S.customWeights?.[etf.id]; return(cw!==undefined&&cw>0)?cw:etf.weight; }
+function getNormWeight(etf){
+  if(!isActive(etf))return 0;
+  const rawSum=activeETFs().reduce((s,e)=>{ const cw=S.customWeights?.[e.id]; return s+(cw!==undefined&&cw>0?cw:e.weight); },0);
+  return rawSum>0?getWeight(etf)/rawSum:0;
+}
+function calcPositions(){
+  const total=ETFS.reduce((s,e)=>s+(S.shares[e.id]||0)*(S.prices[e.id]||0),0);
+  return ETFS.map(e=>{
+    const value=(S.shares[e.id]||0)*(S.prices[e.id]||0), actual=total>0?value/total:0, target=getNormWeight(e), dev=actual-target;
+    const active=isActive(e), status=!active?'off':Math.abs(dev)<0.03?'ok':Math.abs(dev)<0.05?'watch':Math.abs(dev)<0.10?'adjust':'urgent';
+    return{etf:e,value,actual,dev,status,needed:total*target-value,total,shares:S.shares[e.id]||0,active};
+  });
+}
+function calcSparplan(pos){
+  if(!pos.active)return{base:0,monthly:0,delta:0,needed:0,months:0};
+  const base=Math.round(S.sparrate*getNormWeight(pos.etf));
+  let monthly,months;
+  if(pos.status==='ok'){monthly=base;months=0;}
+  else if(pos.dev<0){ if(pos.status==='watch'){monthly=Math.round(base*1.35);months=2;}else if(pos.status==='adjust'){monthly=Math.round(base*1.85);months=4;}else{monthly=Math.round(base*2.6);months=6;} }
+  else{ if(pos.status==='watch'){monthly=Math.round(base*0.65);months=2;}else if(pos.status==='adjust'){monthly=Math.round(base*0.2);months=4;}else{monthly=0;months=6;} }
+  return{base,monthly,delta:monthly-base,needed:Math.round(pos.needed),months};
+}
+function worstStatus(pos){ const ord=['ok','watch','adjust','urgent']; return pos.filter(p=>p.active).reduce((w,p)=>ord.indexOf(p.status)>ord.indexOf(w)?p.status:w,'ok'); }
+function ampelForStatus(s){ return({ok:{cls:'ok',icon:'🟢',label:'ALLES OK',desc:'Alle aktiven ETFs im grünen Bereich.'},watch:{cls:'watch',icon:'🟡',label:'PRÜFEN',desc:'Leichte Abweichungen — Sparpläne anpassen.'},adjust:{cls:'adjust',icon:'🟠',label:'ANPASSEN',desc:'Rebalancing empfohlen — Sparplan umlenken.'},urgent:{cls:'urgent',icon:'🔴',label:'SOFORT!',desc:'Stark abgewichen — Sofortmaßnahme!'}})[s]||{cls:'ok',icon:'🟢',label:'ALLES OK',desc:''}; }
+function buildRec(pos){
+  if(!pos.active)return'⏸ ETF deaktiviert — wird nicht berücksichtigt.';
+  const sp=calcSparplan(pos),dev=(pos.dev*100).toFixed(1),abs=Math.abs(sp.needed);
+  if(pos.status==='ok')return`✅ Kein Handlungsbedarf. Sparplan: ${sp.base} €/Mon.`;
+  if(pos.dev<0){ const ex=sp.monthly-sp.base; if(pos.status==='watch')return`⚠️ Untergewichtet ${dev}% (fehlen ${fmt(abs,0)} €). SP auf ${sp.monthly} €/Mon. (+${ex} €) für ${sp.months} Mon.`; if(pos.status==='adjust')return`🟠 Untergewichtet ${dev}%. SP auf ${sp.monthly} €/Mon. für ${sp.months} Mon. Evtl. Einmalkauf.`; return`🔴 Stark untergewichtet ${dev}%! SP auf ${sp.monthly} €/Mon. für ${sp.months} Mon. Einmalkauf ${fmt(abs,0)} € empfohlen.`; }
+  else{ const rd=sp.base-sp.monthly; if(pos.status==='watch')return`⚠️ Übergewichtet ${dev}%. SP reduzieren: ${sp.monthly} €/Mon. (−${rd} €) für ${sp.months} Mon.`; if(pos.status==='adjust')return`🟠 Übergewichtet ${dev}%. SP auf ${sp.monthly} €/Mon. für ${sp.months} Mon.`; return`🔴 Stark übergewichtet ${dev}%! SP stoppen (0 €) für ${sp.months} Mon.`; }
+}
+function calcTotalPnL(){
+  let cost=0,val=0,ok=false;
+  ETFS.forEach(e=>{const pp=S.purchasePrices[e.id],sh=S.shares[e.id]||0,pr=S.prices[e.id]||0;if(pp&&sh>0&&pr>0){cost+=sh*pp;val+=sh*pr;ok=true;}});
+  if(!ok||!cost)return null; return{cost,value:val,pnl:val-cost,pnlPct:(val-cost)/cost*100};
+}
+
+// ── FORMATTER ────────────────────────────────────────────────────────────────
+function fmt(n,dec=0){ if(!n&&n!==0)return'—'; return new Intl.NumberFormat('de-DE',{minimumFractionDigits:dec,maximumFractionDigits:dec}).format(n); }
+const fmtEuro=n=>fmt(n,0)+' €';
+function fmtShares(n){ if(!n&&n!==0)return''; if(n===0)return'0'; return n.toFixed(8).replace(/\.?0+$/,'').replace('.',','); }
+function fmt6(n){ if(!n&&n!==0)return''; let s=n.toFixed(6).replace('.',','); s=s.replace(/,([\d]{2,6?})0+$/,',$1'); return s; }
+function fmt4(n){ if(!n&&n!==0)return''; return n.toFixed(4).replace('.',','); }
+function parseDE(str){
+  if(str===null||str===undefined)return NaN; let s=String(str).trim(); if(!s||s==='-')return NaN;
+  const hasComma=s.includes(','),hasDot=s.includes('.');
+  if(hasComma&&hasDot){ s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,''); }
+  else if(hasComma){s=s.replace(',','.');}
+  return parseFloat(s);
+}
+function selectAllInput(el){ setTimeout(()=>el.select(),50); }
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function renderAll(){ renderDashboard();renderRebalancing();renderEntry();renderHistory();renderSettings(); }
+
+function renderDashboard(){
+  const pos=calcPositions(),total=pos[0]?.total||0,year=new Date().getFullYear();
+  const plan=PLAN.find(p=>p.year===year)||PLAN[PLAN.length-1];
+  const whole=Math.floor(total),dec=Math.round((total-whole)*100).toString().padStart(2,'0');
+  document.getElementById('total-value').innerHTML=fmt(whole)+' <span class="hv-cents">,'+dec+' €</span>';
+  const diff=total-plan.depot, vb=document.getElementById('vs-plan-badge');
+  vb.textContent=(diff>=0?'+':'')+fmtEuro(Math.round(diff))+' vs. Plan '+year;
+  vb.className='hv-sub '+(diff>=0?'positive':'negative');
+  const pnl=calcTotalPnL(),pb=document.getElementById('pnl-badge'),pdr=document.getElementById('pnl-detail-row');
+  if(pnl){ pb.style.display='inline-flex'; pb.textContent=(pnl.pnl>=0?'▲ +':'▼ ')+fmtEuro(Math.round(pnl.pnl))+' ('+(pnl.pnlPct>=0?'+':'')+fmt(pnl.pnlPct,1)+'%)'; pb.className='hv-sub '+(pnl.pnl>=0?'positive':'negative'); pdr.style.display='block'; pdr.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center"><div><div style="font-size:11px;color:var(--silver);margin-bottom:3px">Eingezahlt</div><div style="font-size:14px;font-weight:700">${fmtEuro(Math.round(pnl.cost))}</div></div><div><div style="font-size:11px;color:var(--silver);margin-bottom:3px">Aktuell</div><div style="font-size:14px;font-weight:700">${fmtEuro(Math.round(pnl.value))}</div></div><div><div style="font-size:11px;color:var(--silver);margin-bottom:3px">Gew./Verlust</div><div style="font-size:14px;font-weight:700;color:${pnl.pnl>=0?'#81C784':'#EF9A9A'}">${pnl.pnl>=0?'+':''}${fmtEuro(Math.round(pnl.pnl))}</div></div></div>`; }
+  else{ pb.style.display='none'; pdr.style.display='none'; }
+  document.getElementById('kpi-sparrate').textContent=fmtEuro(S.sparrate);
+  document.getElementById('kpi-year').textContent=year;
+  const prog=total/305000; document.getElementById('prog-pct').textContent=fmt(prog*100,0)+' %'; document.getElementById('prog-bar').style.width=Math.min(prog*100,100)+'%';
+  const ms=document.getElementById('ms-scroll');
+  ms.innerHTML=PLAN.map(p=>`<div class="ms-tile ${p.year===year?'current':''}"><div class="ms-year">${p.year}</div><div class="ms-depot">${Math.round(p.depot/1000)}k</div><div class="ms-div">${p.netDiv} €</div></div>`).join('');
+  setTimeout(()=>{ const c=ms.querySelector('.current'); if(c)c.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'}); },300);
+  drawMiniChart(); renderDividendSection();
+}
+
+function drawMiniChart(){
+  const canvas=document.getElementById('mini-chart'); if(!canvas)return;
+  const ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1,W=canvas.offsetWidth,H=130;
+  canvas.width=W*dpr;canvas.height=H*dpr;ctx.scale(dpr,dpr);
+  const data=S.snapshots.length?S.snapshots.map(s=>s.total):[];
+  const planPts=PLAN.slice(0,Math.max(data.length+3,6));
+  const allVals=[...data,...planPts.map(p=>p.depot)];
+  if(!allVals.length){ctx.fillStyle='rgba(255,255,255,.2)';ctx.font='12px DM Sans';ctx.textAlign='center';ctx.fillText('Noch keine Daten',W/2,H/2);return;}
+  const maxV=Math.max(...allVals)*1.1,minV=0;
+  const px=(i,len)=>len<=1?W/2:(i/(len-1))*(W-20)+10, py=v=>H-20-((v-minV)/(maxV-minV))*(H-30);
+  ctx.strokeStyle='rgba(255,255,255,.06)';ctx.lineWidth=1;
+  for(let i=0;i<4;i++){const y=py(minV+(maxV-minV)*i/3);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(planPts.length>1){ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();planPts.forEach((p,i)=>{const x=px(i,planPts.length),y=py(p.depot);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();ctx.setLineDash([]);}
+  if(data.length>0){
+    const grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'rgba(46,117,182,.45)');grad.addColorStop(1,'rgba(46,117,182,0)');
+    ctx.beginPath();data.forEach((v,i)=>{const x=px(i,data.length),y=py(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.lineTo(px(data.length-1,data.length),H);ctx.lineTo(px(0,data.length),H);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+    ctx.strokeStyle='#C9A84C';ctx.lineWidth=2.5;ctx.beginPath();data.forEach((v,i)=>{const x=px(i,data.length),y=py(v);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();
+    ctx.fillStyle='#C9A84C';data.forEach((v,i)=>{const x=px(i,data.length),y=py(v);ctx.beginPath();ctx.arc(x,y,3.5,0,Math.PI*2);ctx.fill();});
+  }
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.font='9px DM Sans';ctx.textAlign='left';ctx.fillText('─── Ist',10,H-3);
+  ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillText('- - - Plan',55,H-3);
+}
+
+function renderDividendSection(){
+  const gridEl=document.getElementById('divmon-grid'),totalsEl=document.getElementById('divmon-totals'),etfRowEl=document.getElementById('divmon-etf-rows');
+  if(!gridEl)return;
+  const now=new Date(),curMo=now.getMonth()+1;
+  const moNames=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  const monthTotals=Array.from({length:12},(_,i)=>{
+    const m=i+1;
+    return activeETFs().reduce((sum,etf)=>{
+      const sh=S.shares[etf.id]||0,pay=divPaymentPerShare(etf);
+      return sum+(etf.divMonths.includes(m)?sh*pay:0);
+    },0);
+  });
+  const avgMonthly=activeETFs().reduce((s,etf)=>s+(S.shares[etf.id]||0)*avgMonthlyDivPerShare(etf),0);
+  const yearTotal=avgMonthly*12,curMoTotal=monthTotals[curMo-1];
+
+  gridEl.innerHTML=moNames.map((name,i)=>{
+    const m=i+1,val=monthTotals[i],paying=activeETFs().filter(e=>e.divMonths.includes(m)),hasPay=val>0.005;
+    return`<div class="divmon-tile ${m===curMo?'current-month':''} ${hasPay?'has-payment':''}"><div class="dmt-name">${name}${m===curMo?' ◀':''}</div><div class="dmt-val ${!hasPay?'zero':''}">${hasPay?fmt(val,2)+' €':'—'}</div><div class="dmt-etfs">${paying.map(e=>`<div class="dmt-dot" style="background:${e.color}" title="${e.name}"></div>`).join('')}</div></div>`;
+  }).join('');
+
+  if(totalsEl)totalsEl.innerHTML=`<div class="divmon-total-tile"><div class="dtt-label">${moNames[curMo-1]} (dieser Monat)</div><div class="dtt-val">${curMoTotal>0?fmt(curMoTotal,2)+' €':'—'}</div><div class="dtt-sub">${curMoTotal>0?'erwartet':'kein Ausschüttungsmonat'}</div></div><div class="divmon-total-tile"><div class="dtt-label">Ø pro Monat (Jahressumme ÷ 12)</div><div class="dtt-val">${fmt(avgMonthly,2)} €</div><div class="dtt-sub">${fmt(yearTotal,2)} € / Jahr</div></div>`;
+
+  if(etfRowEl) etfRowEl.innerHTML=ETFS.map(etf=>{
+    const sh=S.shares[etf.id]||0,divYear=getDivEurPerYear(etf),divPay=divPaymentPerShare(etf),myYr=sh*divYear,src=divSource(etf),active=isActive(etf),isPay=etf.divMonths.includes(curMo),curPay=isPay?sh*divPay:0;
+    return`<div class="divmon-etf-row ${!active?'inactive':''}"><div class="der-dot" style="background:${etf.color}"></div><div class="der-name"><div class="der-nm">${etf.name}${!active?' <span style="font-size:9px;color:var(--silver)">(inaktiv)</span>':''}</div><div class="der-sub">${fmtShares(sh)} St. · ${active&&divYear>0?fmt4(divYear)+' €/St./J.':'—'} · ${etf.divMonths.length}× p.a. · ${src}</div></div><div class="der-vals"><div class="der-month">${!active?'<span style="color:var(--silver);font-size:10px">—</span>':isPay?fmt(curPay,2)+' €':'<span style="color:var(--silver);font-size:11px">— '+moNames[curMo-1]+'</span>'}</div><div class="der-year">${active&&myYr>0?fmt(myYr,2)+' €/J. · Ø '+fmt(myYr/12,2)+' €/M.':''}</div></div></div>`;
+  }).join('');
+}
+
+function renderRebalancing(){
+  const pos=calcPositions(),ws=worstStatus(pos),a=ampelForStatus(ws);
+  const banner=document.getElementById('ampel-banner'); banner.className='ampel-banner '+a.cls;
+  document.getElementById('ampel-icon').textContent=a.icon; document.getElementById('ampel-status').textContent=a.label; document.getElementById('ampel-desc').textContent=a.desc;
+  const list=document.getElementById('etf-list');
+  list.innerHTML=pos.map(p=>{
+    const dev=p.dev*100,sp=calcSparplan(p),expanded=S.expanded[p.etf.id]?'expanded':'',normW=getNormWeight(p.etf);
+    const badgeCls=p.active?'badge-'+p.status:'badge-off',badgeTxt=p.active?(dev>=0?'+':'')+dev.toFixed(1)+' %':'AUS';
+    return`<div class="etf-row ${expanded} ${!p.active?'disabled-etf':''}" id="etf-row-${p.etf.id}" onclick="toggleExpand('${p.etf.id}')"><div class="etf-row-top"><div class="etf-dot" style="background:${p.etf.color}"></div><div class="etf-info"><div class="etf-name">${p.etf.name}</div><div class="etf-sub">${fmtShares(p.shares)} St. · ${fmtEuro(Math.round(p.value))}</div></div><div class="etf-status"><div class="etf-weight">${p.active?(p.actual*100).toFixed(1)+' %':'—'}</div><div class="etf-badge ${badgeCls}">${badgeTxt}</div></div></div>${p.active?`<div class="weight-track"><div class="weight-target" style="left:${normW*100}%"></div><div class="weight-actual" style="width:${Math.min(p.actual*100,100)}%;background:${p.etf.color}"></div></div>`:''}<div class="etf-detail"><div class="detail-grid"><div class="detail-tile"><div class="dt-val">${fmtEuro(sp.base)}</div><div class="dt-lbl">Basis-SP</div></div><div class="detail-tile"><div class="dt-val" style="color:${sp.monthly>sp.base?'#81C784':sp.monthly<sp.base?'#FFCC80':'white'}">${fmtEuro(sp.monthly)}</div><div class="dt-lbl">Angepasst</div></div><div class="detail-tile"><div class="dt-val" style="color:${p.needed>0?'#81C784':p.needed<0?'#FFCC80':'white'}">${p.needed>0?'+':''}${fmtEuro(Math.round(p.needed))}</div><div class="dt-lbl">${p.needed>50?'Nachkauf':p.needed<-50?'Übergewicht':'Ausgewogen'}</div></div></div><div class="recommendation">💡 ${buildRec(p)}</div></div></div>`;
+  }).join('');
+
+  const spList=document.getElementById('sparplan-list'); let totalAdj=0,totalNeeded=0;
+  spList.innerHTML=pos.map(p=>{
+    const sp=calcSparplan(p); totalAdj+=sp.monthly; totalNeeded+=sp.needed;
+    if(!p.active)return`<div class="sp-row"><div class="sp-row-main"><div class="sp-dot" style="background:${p.etf.color};opacity:.4"></div><span class="sp-name" style="opacity:.4;text-decoration:line-through">${p.etf.name}</span><span style="font-size:10px;color:var(--silver)">deaktiviert</span></div></div>`;
+    const cls=sp.monthly===sp.base?'same':sp.monthly>sp.base?'up':sp.monthly===0?'zero':'down';
+    const nb=sp.needed!==0&&p.status!=='ok'?`<div class="sp-row-needed"><span class="needed-badge ${sp.needed>0?'needed-plus':'needed-minus'}">${sp.needed>0?'▲':'▼'} ${Math.abs(sp.needed).toLocaleString('de-DE')} € ${sp.needed>0?'Nachkauf':'Übergewicht'}</span></div>`:'';
+    const dur=sp.months>0?`<span class="sp-dur">${sp.months} Mon.</span>`:'';
+    return`<div class="sp-row"><div class="sp-row-main"><div class="sp-dot" style="background:${p.etf.color}"></div><span class="sp-name">${p.etf.name}</span><div class="sp-amounts">${sp.monthly!==sp.base?`<span class="sp-base">${sp.base} €</span><span class="sp-arr">→</span>`:''}<span class="sp-adj ${cls}">${sp.monthly} €/Mon.</span>${dur}</div></div>${nb}</div>`;
+  }).join('');
+  document.getElementById('sp-total-val').textContent=fmtEuro(totalAdj);
+  const netEl=document.getElementById('sp-net-rebalancing');
+  if(Math.abs(totalNeeded)<10){netEl.textContent='✓ Depot ausbalanciert';netEl.className='sp-net balanced';}
+  else if(totalNeeded>0){netEl.textContent=`▲ Netto-Nachkauf: +${Math.round(totalNeeded).toLocaleString('de-DE')} €`;netEl.className='sp-net plus';}
+  else{netEl.textContent=`▼ Netto-Übergewicht: ${Math.round(totalNeeded).toLocaleString('de-DE')} €`;netEl.className='sp-net minus';}
+}
+function toggleExpand(id){ S.expanded[id]=!S.expanded[id]; const row=document.getElementById('etf-row-'+id); if(row)row.classList.toggle('expanded',!!S.expanded[id]); }
+
+function renderEntry(){
+  const now=new Date(), months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  document.getElementById('current-month-label').textContent=months[now.getMonth()]+' '+now.getFullYear();
+  document.getElementById('current-year-label').textContent=now.getFullYear();
+  const pos=calcPositions(), maxDev=Math.max(...pos.filter(p=>p.active).map(p=>Math.abs(p.dev)),0);
+  const mdEl=document.getElementById('max-dev-label'); mdEl.textContent=(maxDev*100).toFixed(1)+' %';
+  mdEl.style.color=maxDev<0.03?'#81C784':maxDev<0.05?'#FFD54F':maxDev<0.10?'#FFCC80':'#EF9A9A';
+  const container=document.getElementById('entry-inputs');
+  container.innerHTML=ETFS.map(e=>{
+    const active=isActive(e),normW=getNormWeight(e),spShares=S.prices[e.id]>0&&normW>0?Math.round(S.sparrate*normW)/S.prices[e.id]:0;
+    const curVal=(S.shares[e.id]||0)*(S.prices[e.id]||0);
+    return`<div class="card" style="margin-bottom:10px${!active?';opacity:.5':''}"><div class="input-group${!active?' disabled-entry':''}"><div class="input-group-header"><div class="ig-dot" style="background:${e.color}"></div><div class="ig-info"><div class="ig-name">${e.name}${!active?' <span style="font-size:10px;color:var(--silver)">(inaktiv)</span>':''}</div><div class="ig-meta">${e.isin} · ${S.prices[e.id]>0?fmt4(S.prices[e.id])+' €':'—'}</div></div><div class="ig-val">${fmtEuro(Math.round(curVal))}</div></div><div class="input-row"><span class="input-label">Anteile gesamt</span><input type="text" inputmode="decimal" class="num-input" id="inp-${e.id}" value="${fmtShares(S.shares[e.id]||0)}" placeholder="${S.defaultShares[e.id]>0?fmtShares(S.defaultShares[e.id])+'  (Voreinst.)':'0,000000'}" autocomplete="off" autocorrect="off" spellcheck="false" oninput="liveUpdate('${e.id}',this.value)" onfocus="selectAllInput(this)" onblur="fmtOnBlur('${e.id}',this)"${!active?' disabled':''}></div><div style="font-size:10px;color:var(--silver);margin:2px 0 5px 2px">Bis 8 Dezimalstellen — z.B. <span style="color:var(--gold-lt);font-weight:600">0,583729</span></div>${active?`<div class="quick-btns"><button class="qb" onclick="addShares('${e.id}',0.1)">+0,1</button><button class="qb" onclick="addShares('${e.id}',0.5)">+0,5</button><button class="qb" onclick="addShares('${e.id}',1)">+1</button><button class="qb" onclick="addShares('${e.id}',5)">+5</button>${spShares>0?`<button class="qb sparplan" onclick="addSharesSp('${e.id}','${spShares.toFixed(8)}')">+${fmtShares(spShares)} (SP)</button>`:''}</div>`:''}</div></div>`;
+  }).join('');
+  updateCalculator();
+}
+function liveUpdate(id,val){ const v=parseDE(val); if(!isNaN(v)&&v>=0){S.shares[id]=v;save();renderRebalancing();renderHistory();} }
+function fmtOnBlur(id,el){ const v=parseDE(el.value); if(!isNaN(v)&&v>=0){el.value=fmtShares(v);liveUpdate(id,el.value);} }
+function addShares(id,n){ const P=100000000; S.shares[id]=Math.round(((S.shares[id]||0)+n)*P)/P; const el=document.getElementById('inp-'+id); if(el)el.value=fmtShares(S.shares[id]); save();renderRebalancing();renderEntry(); }
+function addSharesSp(id,n){ const P=100000000,add=parseDE(String(n)); if(isNaN(add))return; S.shares[id]=Math.round(((S.shares[id]||0)+add)*P)/P; const el=document.getElementById('inp-'+id); if(el)el.value=fmtShares(S.shares[id]); save();renderRebalancing();renderEntry(); }
+function updateCalculator(){
+  const amt=parseDE(document.getElementById('calc-amount')?.value||'150')||150;
+  const pos=calcPositions(),adjTot=pos.reduce((s,p)=>s+calcSparplan(p).monthly,0)||S.sparrate;
+  const res=document.getElementById('calc-result'); if(!res)return;
+  res.innerHTML=pos.map(p=>{const sp=calcSparplan(p),alloc=adjTot>0?amt*sp.monthly/adjTot:0,newSh=S.prices[p.etf.id]>0&&p.active?alloc/S.prices[p.etf.id]:0;return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.04);border-radius:var(--r-sm);${!p.active?'opacity:.4':''}"><div style="width:8px;height:8px;border-radius:50%;background:${p.etf.color};flex-shrink:0"></div><span style="flex:1;font-size:13px">${p.etf.name}</span><div style="text-align:right"><div style="font-size:12px;color:var(--silver)">${p.active?fmt(alloc,2)+' €':'—'}</div><div style="font-size:13px;font-weight:700;color:var(--gold-lt)">${p.active&&newSh>0?'+'+fmtShares(newSh)+' St.':'—'}</div></div></div>`;}).join('');
+}
+function saveEntry(){
+  const now=new Date(),snap={month:now.getMonth()+1,year:now.getFullYear(),total:calcPositions()[0]?.total||0,ts:Date.now()};
+  const idx=S.snapshots.findIndex(s=>s.month===snap.month&&s.year===snap.year); if(idx>=0)S.snapshots[idx]=snap;else S.snapshots.push(snap);
+  save();renderHistory();drawMiniChart();
+  const btn=document.getElementById('save-btn'); if(btn){btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Gespeichert!';btn.classList.add('saved');setTimeout(()=>{btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Speichern &amp; Berechnen';btn.classList.remove('saved');},2500);}
+  showToast('Eintrag gespeichert ✓');
+}
+function renderHistory(){
+  const pos=calcPositions(),year=new Date().getFullYear(),plan=PLAN.find(p=>p.year===year)||PLAN[PLAN.length-1];
+  const tot=pos[0]?.total||0,diff=tot-plan.depot,prog=plan.depot>0?Math.min(tot/plan.depot,2):0;
+  document.getElementById('hist-ist').textContent=Math.round(tot/1000)+'k €';
+  document.getElementById('hist-plan').textContent=Math.round(plan.depot/1000)+'k €';
+  document.getElementById('hist-diff').textContent=(diff>=0?'+':'')+Math.round(diff/1000*10)/10+'k €';
+  document.getElementById('hist-diff-tile').className='kpi-tile'+(diff>=0?' green':'');
+  document.getElementById('hist-prog-label').textContent='Vs. Plan '+year;
+  document.getElementById('hist-prog-pct').textContent=Math.round(prog*100)+' %';
+  const hpb=document.getElementById('hist-prog-bar'); hpb.style.width=Math.min(prog*100,100)+'%'; hpb.className='prog-fill'+(prog>=1?' green':diff>=0?'':'');
+  const list=document.getElementById('history-list'),snaps=[...S.snapshots].sort((a,b)=>b.ts-a.ts);
+  const mN=['','Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  if(!snaps.length){list.innerHTML='<div class="empty-state"><div class="es-icon">🗓</div><div class="es-text">Noch keine Einträge.<br>Beginne mit der Monatseingabe.</div></div>';return;}
+  list.innerHTML='<div style="display:flex;flex-direction:column;gap:8px">'+snaps.map(s=>{const planY=PLAN.find(p=>p.year===s.year),ok=planY?s.total>=planY.depot*0.95:null;return`<div class="hist-item"><div class="hist-month"><div class="hm-name">${mN[s.month]||'?'}</div><div class="hm-year">${s.year}</div></div><div><div class="hd-val">${fmtEuro(Math.round(s.total))}</div>${planY?`<div class="hd-sub">Plan: ${fmtEuro(planY.depot)} · ${ok?'✓ Im Plan':'⚠ Unter Plan'}</div>`:''}</div>${ok!==null?`<span class="hist-badge" style="${ok?'background:rgba(46,125,50,.2);color:#81C784;border:1px solid rgba(46,125,50,.3)':'background:rgba(230,81,0,.15);color:#FFCC80;border:1px solid rgba(230,81,0,.3)'}">${ok?'✓ OK':'⚠ Check'}</span>`:''}</div>`;}).join('')+'</div>';
+}
+
+function renderSettings(){
+  const sp=document.getElementById('set-sparrate'); if(sp)sp.value=S.sparrate;
+  const sk=document.getElementById('set-startkapital'); if(sk)sk.value=S.startkapital||50000;
+  renderETFConfig();
+}
+function saveSettings(){
+  const sp=document.getElementById('set-sparrate'); if(sp)S.sparrate=parseDE(sp.value)||150;
+  const sk=document.getElementById('set-startkapital'); if(sk)S.startkapital=parseDE(sk.value)||50000;
+  save();renderAll();showToast('Einstellungen gespeichert ✓');
+}
+
+function renderETFConfig(){
+  const container=document.getElementById('etf-cfg-list'); if(!container)return;
+  container.innerHTML=ETFS.map(e=>{
+    const active=isActive(e),autoPrice=S.prices[e.id]||0,manual=S.manualPrices?.[e.id];
+    const manualActive=manual?.price>0&&manual?.ts&&(Date.now()-manual.ts)<3600000;
+    const dispPrice=manualActive?manual.price:autoPrice,priceOk=dispPrice>0;
+    const chg=S.changes[e.id]||0,chgStr=chg!==0?(chg>=0?'+':'')+(chg*100).toFixed(2)+'%':'';
+    const divYear=getDivEurPerYear(e),divPay=divPaymentPerShare(e),divSrc=divSource(e),divLoading=!S.divData[e.id]&&!S.manualDivEur[e.id];
+    const shares=S.shares[e.id]||0,pp=S.purchasePrices[e.id]||0,weightPct=active?Math.round(getWeight(e)*100):0;
+    const cost=pp>0?shares*pp:0,curVal=shares*dispPrice,pnl=cost>0?curVal-cost:null,pnlPct=cost>0?(curVal-cost)/cost*100:null;
+    const myMonDiv=shares*avgMonthlyDivPerShare(e);
+    const kursVal=manualActive?fmt6(manual.price):'',ppVal=pp?fmt6(pp):'',divEurVal=S.manualDivEur[e.id]?fmt6(S.manualDivEur[e.id]):'',sharesVal=shares>0?fmtShares(shares):'';
+    const defSh=S.defaultShares[e.id]||0,defPh=defSh>0?fmtShares(defSh)+' (Voreinst.)':'0,000000';
+    return`<div class="etf-cfg-block">
+<div class="etf-cfg-header">
+  <div class="etf-cfg-dot" style="background:${e.color}"></div>
+  <div style="flex:1"><div class="etf-cfg-title">${e.name}</div><div class="etf-cfg-ticker">${e.isin} · ${e.note||e.ticker}</div></div>
+  <label class="toggle-wrap" onclick="event.stopPropagation()">
+    <span class="toggle-lbl" style="color:${active?'#81C784':'var(--silver)'}">${active?'EIN':'AUS'}</span>
+    <div class="toggle-switch"><input type="checkbox" ${active?'checked':''} onchange="toggleETF('${e.id}',this.checked)"><div class="toggle-track"></div><div class="toggle-knob"></div></div>
+  </label>
+</div>
+<div class="etf-cfg-section-label">Automatisch geladen</div>
+<div class="etf-cfg-auto-row">
+  <div><div class="aab-label">Kurs (Yahoo)</div><div id="cfg-price-${e.id}" class="auto-price-badge ${priceOk?'':'loading'}">${priceOk?fmt4(dispPrice)+' €'+(manualActive?' ✎':chgStr?' '+chgStr:''):'⟳ Lade…'}</div></div>
+  <div><div class="aab-label">Ausschüttung (${divSrc})</div><div id="cfg-div-${e.id}" class="auto-div-badge ${divLoading?'loading':''}">${divYear>0?fmt6(divYear)+' €/St./J. · '+fmt6(divPay)+' €/Zahlung':'⟳ Lade…'}</div></div>
+</div>
+<div class="etf-cfg-section-label">Manuell eingeben</div>
+<div class="etf-cfg-inputs">
+  <div class="etf-cfg-input-row"><span class="etf-cfg-label">Stückzahl:</span><input type="text" inputmode="decimal" class="etf-cfg-input ${shares>0?'manual-override':''}" id="cfg-inp-shares-${e.id}" value="${sharesVal}" placeholder="${defPh}" autocomplete="off" autocorrect="off" spellcheck="false" onfocus="selectAllInput(this)" oninput="cfgSharesLive('${e.id}',this.value)" onblur="cfgSharesBlur('${e.id}',this)"><span class="etf-cfg-unit">Stk.</span>${shares>0&&priceOk?`<span style="font-size:9.5px;color:var(--silver);white-space:nowrap">${fmt(curVal,0)} €</span>`:''}</div>
+  <div class="etf-cfg-input-row"><span class="etf-cfg-label">Kurs (TR):</span><input type="text" inputmode="decimal" class="etf-cfg-input ${manualActive?'manual-override':''}" id="cfg-inp-kurs-${e.id}" value="${kursVal}" placeholder="${priceOk?fmt4(dispPrice):'0,0000'}" autocomplete="off" autocorrect="off" spellcheck="false" onfocus="selectAllInput(this)" oninput="cfgKursLive('${e.id}',this.value)" onblur="cfgKursBlur('${e.id}',this)"><span class="etf-cfg-unit">€/Anteil</span>${manualActive?`<button onclick="clearManualPrice('${e.id}')" style="background:rgba(198,40,40,.15);border:1px solid rgba(198,40,40,.3);color:#EF9A9A;border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer;white-space:nowrap">✕</button>`:''}</div>
+  <div class="etf-cfg-input-row"><span class="etf-cfg-label">Ø Kaufpreis:</span><input type="text" inputmode="decimal" class="etf-cfg-input" id="cfg-inp-pp-${e.id}" value="${ppVal}" placeholder="${dispPrice>0?fmt6(dispPrice):'0,000000'}" autocomplete="off" autocorrect="off" spellcheck="false" onfocus="selectAllInput(this)" oninput="cfgPpLive('${e.id}',this.value)" onblur="cfgPpBlur('${e.id}',this)"><span class="etf-cfg-unit">€/Anteil</span><div id="cfg-pnl-${e.id}" class="etf-cfg-pnl ${pnl===null?'neu':pnl>=0?'up':'down'}">${pnl===null?'—':(pnl>=0?'+':'')+fmt(pnl,0)+' € ('+(pnlPct>=0?'+':'')+fmt(pnlPct,1)+'%)'}</div></div>
+  <div class="etf-cfg-input-row"><span class="etf-cfg-label">Ausschüttung:</span><input type="text" inputmode="decimal" class="etf-cfg-input ${S.manualDivEur[e.id]?'manual-override':''}" id="cfg-inp-div-${e.id}" value="${divEurVal}" placeholder="${divYear>0?fmt6(divYear):'0,000000'}" autocomplete="off" autocorrect="off" spellcheck="false" onfocus="selectAllInput(this)" oninput="cfgDivLive('${e.id}',this.value)" onblur="cfgDivBlur('${e.id}',this)"><span class="etf-cfg-unit">€/St./Jahr</span>${S.manualDivEur[e.id]?`<button onclick="clearManualDiv('${e.id}')" style="background:rgba(198,40,40,.15);border:1px solid rgba(198,40,40,.3);color:#EF9A9A;border-radius:8px;padding:4px 8px;font-size:10px;cursor:pointer;white-space:nowrap">✕</button>`:''}</div>
+  ${active?`<div class="etf-cfg-input-row"><span class="etf-cfg-label">Zielgewicht:</span><input type="text" inputmode="decimal" class="etf-cfg-input" id="we-inp-${e.id}" value="${weightPct}" style="width:58px;text-align:center" autocomplete="off" autocorrect="off" spellcheck="false" onfocus="selectAllInput(this)" oninput="updateWeightEditor()" onblur="saveWeights()"><span class="etf-cfg-unit">%</span></div>`:`<div style="font-size:10.5px;color:var(--silver);padding:5px 2px">Zielgewicht: nicht relevant (ETF deaktiviert)</div>`}
+</div>
+${(shares>0||pp>0||myMonDiv>0)?`<div class="etf-cfg-divider"></div><div class="etf-cfg-computed"><div class="ecc-tile"><div class="ecc-val">${priceOk&&shares>0?fmt(curVal,0)+' €':'—'}</div><div class="ecc-lbl">Positionswert</div></div><div class="ecc-tile"><div class="ecc-val ${pnl===null?'':pnl>=0?'positive':'negative'}">${pnl===null?'—':(pnl>=0?'+':'')+fmt(pnl,0)+' €'}</div><div class="ecc-lbl">Gew./Verlust</div></div><div class="ecc-tile"><div class="ecc-val gold">${myMonDiv>0?fmt(myMonDiv,2)+' €':'—'}</div><div class="ecc-lbl">Ø Div./Mon.</div></div><div class="ecc-tile"><div class="ecc-val">${active?weightPct+' %':'AUS'}</div><div class="ecc-lbl">Zielgewicht</div></div></div>`:''}
+</div>`;
+  }).join('');
+  updateWeightEditor();
+}
+
+function toggleETF(id,checked){
+  S.etfEnabled[id]=checked;
+  if(!checked&&S.customWeights[id])delete S.customWeights[id];
+  save();renderAll();showToast((checked?ETFS.find(e=>e.id===id)?.name+' aktiviert':ETFS.find(e=>e.id===id)?.name+' deaktiviert'));
+}
+
+function cfgSharesLive(id,val){ const v=parseDE(val); if(!isNaN(v)&&v>=0){if(v>0){S.shares[id]=v;S.defaultShares[id]=v;}else{delete S.shares[id];delete S.defaultShares[id];} save();renderRebalancing();renderHistory();} }
+function cfgSharesBlur(id,el){ const v=parseDE(el.value); if(!isNaN(v)&&v>=0){if(v>0){S.shares[id]=v;S.defaultShares[id]=v;el.value=fmtShares(v);}else{delete S.shares[id];delete S.defaultShares[id];el.value='';} save();renderAll();} }
+function cfgKursLive(id,val){ const v=parseDE(val); if(!isNaN(v)&&v>0){if(!S.manualPrices)S.manualPrices={};S.manualPrices[id]={price:v,ts:Date.now()};S.prices[id]=v;save();} }
+function cfgKursBlur(id,el){ const v=parseDE(el.value); if(!isNaN(v)&&v>0){if(!S.manualPrices)S.manualPrices={};S.manualPrices[id]={price:v,ts:Date.now()};S.prices[id]=v;el.value=fmt6(v);save();renderAll();showToast('Kurs gesetzt: '+fmt4(v)+' €');}else if(!el.value||el.value==='0')clearManualPrice(id); }
+function cfgPpLive(id,val){ const v=parseDE(val); if(!isNaN(v)&&v>=0){if(v>0)S.purchasePrices[id]=v;else delete S.purchasePrices[id];save();const hdr=document.getElementById('cfg-pnl-'+id);if(hdr&&S.prices[id]>0){const sh=S.shares[id]||0,cost=v*sh,cur=sh*S.prices[id],p=cost>0?cur-cost:null,pp=cost>0?(cur-cost)/cost*100:null;if(p!==null){hdr.textContent=(p>=0?'+':'')+fmt(p,0)+' € ('+(pp>=0?'+':'')+fmt(pp,1)+'%)';hdr.className='etf-cfg-pnl '+(p>=0?'up':'down');}}} }
+function cfgPpBlur(id,el){ const v=parseDE(el.value); if(!isNaN(v)&&v>=0){if(v>0){S.purchasePrices[id]=v;el.value=fmt6(v);}else{delete S.purchasePrices[id];el.value='';} save();renderDashboard();} }
+function cfgDivLive(id,val){ const v=parseDE(val); if(!isNaN(v)&&v>=0){if(v>0)S.manualDivEur[id]=v;else delete S.manualDivEur[id];save();} }
+function cfgDivBlur(id,el){ const v=parseDE(el.value); if(!isNaN(v)&&v>=0){if(v>0){S.manualDivEur[id]=v;el.value=fmt6(v);}else{delete S.manualDivEur[id];el.value='';} save();renderDividendSection();} }
+function clearManualPrice(id){ if(S.manualPrices)delete S.manualPrices[id];save();showToast('Kurs-Override entfernt');const el=document.getElementById('cfg-inp-kurs-'+id);if(el){el.value='';el.className='etf-cfg-input';}setTimeout(()=>refreshPrices(),100); }
+function clearManualDiv(id){ delete S.manualDivEur[id];save();const el=document.getElementById('cfg-inp-div-'+id);if(el){el.value='';el.className='etf-cfg-input';}renderDividendSection();showToast('Ausschüttung zurückgesetzt'); }
+
+function updateWeightEditor(){ updateWeightSum(); }
+function updateWeightSum(){
+  let sum=0; activeETFs().forEach(e=>{const el=document.getElementById('we-inp-'+e.id);if(el)sum+=parseDE(el.value)||0;});
+  const fill=document.getElementById('weight-sum-fill'),label=document.getElementById('weight-sum-label');
+  if(fill){fill.style.width=Math.min(sum,100)+'%';fill.style.background=Math.abs(sum-100)<0.5?'linear-gradient(90deg,var(--green),#43A047)':sum>100?'linear-gradient(90deg,var(--red),#EF5350)':'linear-gradient(90deg,var(--blue-dk),var(--blue-md))';}
+  if(label){label.textContent=sum.toFixed(1)+' %';label.style.color=Math.abs(sum-100)<0.5?'#81C784':sum>100?'#EF9A9A':'var(--gold-lt)';}
+}
+function saveWeights(){
+  let sum=0;const nw={};
+  ETFS.forEach(e=>{if(!isActive(e))return;const el=document.getElementById('we-inp-'+e.id);const v=el?(parseDE(el.value)||0):Math.round(e.weight*100);nw[e.id]=v/100;sum+=v;});
+  if(activeETFs().length>0&&Math.abs(sum-100)>1){showToast('⚠️ Summe aktive Gewichte muss 100 % sein (aktuell: '+sum.toFixed(1)+' %)');return;}
+  S.customWeights=Object.assign(S.customWeights||{},nw);ETFS.forEach(e=>{if(nw[e.id])e.weight=nw[e.id];});save();renderAll();showToast('Gewichte gespeichert ✓');
+}
+function applyDefaultShares(){
+  let n=0;ETFS.forEach(e=>{const p=S.defaultShares[e.id];if(p>0){S.shares[e.id]=p;n++;}});
+  if(!n){showToast('⚠️ Keine Voreinstellungen gespeichert');return;}
+  save();renderAll();switchTab('entry',document.querySelector('.tab-btn:nth-child(3)'));showToast('✓ '+n+' Voreinstellungen übernommen');
+}
+
+// ── PDF ──────────────────────────────────────────────────────────────────────
+let _pdfData=null;
+async function handlePDFUpload(e){
+  const file=e.target.files[0];if(!file)return;
+  const zone=document.getElementById('pdf-drop-zone');
+  zone.querySelector('.pdz-title').textContent='⟳ PDF wird ausgelesen…';zone.querySelector('.pdz-sub').textContent='Bitte warten';
+  document.getElementById('pdf-result').classList.remove('show');
+  try{
+    const text=await extractTextFromPDF(file),positions=parseTRDepotauszug(text);
+    const matched=positions.filter(p=>p.etfId),unmatched=positions.filter(p=>!p.etfId);
+    _pdfData=matched;
+    zone.querySelector('.pdz-title').textContent=`✓ ${positions.length} Positionen gefunden`;
+    zone.querySelector('.pdz-sub').textContent=`${matched.length} Depot-ETFs erkannt · ${unmatched.length} weitere`;
+    document.getElementById('pdf-positions').innerHTML=[...matched.map(p=>`<div class="pdf-position matched"><span class="pp-check">✅</span><div class="pp-info"><div class="pp-name">${p.name}</div><div class="pp-isin">${p.isin}</div></div><div style="text-align:right"><div class="pp-shares">${fmtShares(p.shares)} Stk.</div><div class="pp-eur">${fmt(p.price,2)} €</div></div></div>`),...unmatched.slice(0,3).map(p=>`<div class="pdf-position"><span class="pp-check">⚪</span><div class="pp-info"><div class="pp-name" style="font-size:11px">${p.name}</div><div class="pp-isin">${p.isin}</div></div><div style="text-align:right"><div class="pp-eur">${fmt(p.value,2)} €</div></div></div>`)].join('');
+    const umn=document.getElementById('pdf-unmatched-info');if(unmatched.length>3){umn.textContent='… und '+(unmatched.length-3)+' weitere';umn.style.display='block';}
+    document.getElementById('pdf-result').classList.add('show');
+    if(matched.length>0)document.getElementById('pdf-apply-btn').style.display='flex';
+  }catch(err){zone.querySelector('.pdz-title').textContent='❌ Fehler beim Lesen';zone.querySelector('.pdz-sub').textContent=err.message||'Bitte TR-PDF hochladen';}
+}
+async function extractTextFromPDF(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{try{const bytes=new Uint8Array(e.target.result),raw=new TextDecoder('latin1').decode(bytes),chunks=[];const tjRe=/\(([^)]{1,300})\)\s*Tj/g;let m;while((m=tjRe.exec(raw))!==null)chunks.push(m[1].replace(/\n/g,' ').replace(/\\/g,''));const tjArrRe=/\[([^\]]{1,500})\]\s*TJ/g;while((m=tjArrRe.exec(raw))!==null){const inner=m[1];const strRe=/\(([^)]*)\)/g;let sm;while((sm=strRe.exec(inner))!==null)chunks.push(sm[1].replace(/\\/g,''));}const text=chunks.join(' ');res(text.length<50?raw:text);}catch(err){rej(new Error('PDF konnte nicht gelesen werden'));}};
+    r.onerror=()=>rej(new Error('Datei konnte nicht geöffnet werden'));r.readAsArrayBuffer(file);
+  });
+}
+function parseTRDepotauszug(text){
+  const positions=[],isins=[...new Set(text.match(/[A-Z]{2}[A-Z0-9]{10}/g)||[])];
+  for(const isin of isins){const idx=text.indexOf(isin);if(idx<0)continue;const ctx=text.slice(Math.max(0,idx-300),idx+300);const stkM=[...ctx.matchAll(/([\d]+[,.][\d]+)\s*(?:Stk\.?|St\.)/gi)];const numM=[...ctx.matchAll(/([\d]+[.,][\d]+)/g)];if(!numM.length)continue;let shares=stkM.length>0?parseDE(stkM[0][1]):parseDE(numM[0][1]);if(shares<=0||shares>100000)continue;const ctxB=text.slice(Math.max(0,idx-200),idx);const name=ctxB.split(/[\n\r]+/).filter(l=>l.trim().length>5).slice(-2).join(' ').trim().slice(0,60)||isin;const ctxA=text.slice(idx,idx+200);const priceNums=[...ctxA.matchAll(/([\d]+[.,][\d]{2,4})/g)].map(mm=>parseDE(mm[1])).filter(v=>v>0.5&&v<100000);const price=priceNums[0]||0,value=priceNums[1]||shares*price;positions.push({isin,name,shares,price,value,etfId:PDF_ISIN_MAP[isin]||null});}
+  return positions.sort((a,b)=>(b.etfId?1:0)-(a.etfId?1:0));
+}
+function applyPDFData(){
+  if(!_pdfData||!_pdfData.length)return;let n=0;
+  _pdfData.forEach(pos=>{if(!pos.etfId)return;if(pos.shares>0){S.shares[pos.etfId]=pos.shares;n++;}if(pos.price>0){if(!S.manualPrices)S.manualPrices={};S.manualPrices[pos.etfId]={price:pos.price,ts:Date.now()};S.prices[pos.etfId]=pos.price;}});
+  save();renderAll();switchTab('entry',document.querySelector('.tab-btn[onclick*="entry"]'));showToast('✅ '+n+' ETF-Positionen übernommen');
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function switchTab(name,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const el=document.getElementById('tab-'+name); if(el){el.classList.add('active');el.style.animation='none';el.offsetHeight;el.style.animation='';}
+  if(btn)btn.classList.add('active');
+  if(name==='dashboard')renderDashboard();if(name==='rebalancing')renderRebalancing();
+  if(name==='entry')renderEntry();if(name==='history')renderHistory();if(name==='settings')renderSettings();
+}
+
+// ── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),2200); }
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+(function registerSW(){
+  if(!('serviceWorker' in navigator))return;
+  if(location.protocol==='file:'||(location.protocol!=='https:'&&location.hostname!=='localhost'))return;
+  window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}); navigator.serviceWorker.addEventListener('message',ev=>{if(ev.data?.type==='REFRESH_PRICES')refreshPrices();}); });
+})();
+
+window.addEventListener('load',async()=>{
+  load();
+  if(S.customWeights)ETFS.forEach(e=>{if(S.customWeights[e.id]>0)e.weight=S.customWeights[e.id];});
+  const allZero=ETFS.every(e=>(S.shares[e.id]||0)===0);
+  if(allZero&&S.defaultShares)ETFS.forEach(e=>{if(S.defaultShares[e.id]>0)S.shares[e.id]=S.defaultShares[e.id];});
+  renderAll();updateBackupStatus();
+  try{const raw=localStorage.getItem(KEY)||'';const el=document.getElementById('data-size-label');if(el)el.textContent=(new Blob([raw]).size/1024).toFixed(1)+' KB';}catch(e){}
+  setTimeout(()=>refreshPrices(),400);
+  setTimeout(()=>refreshDividends(),1200);
+  setTimeout(()=>{ const ts=localStorage.getItem(BACKUP_KEY); if(!ts||(Date.now()-new Date(ts).getTime())>35*86400000){try{const raw=localStorage.getItem(KEY);if(raw&&JSON.parse(raw)?.snapshots?.length>0)showToast('💾 Backup empfohlen');}catch(e){}} },3500);
+  window.addEventListener('resize',()=>setTimeout(drawMiniChart,200));
+  document.getElementById('confirm-overlay').addEventListener('click',function(e){if(e.target===this)hideConfirm();});
+});
+window.visualViewport?.addEventListener('resize',()=>{ document.getElementById('content').style.paddingBottom=(window.innerHeight-window.visualViewport.height+90)+'px'; });
+</script></body></html>
